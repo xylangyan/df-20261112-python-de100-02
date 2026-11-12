@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2024-01-05T00:00:00Z</responseDate>
+    <request verb="ListRecords" metadataPrefix="oai_dc" from="2024-01-02T22:00:00Z" until="2024-01-03T21:59:59Z">http://test.example.com/oai</request>
+    <ListRecords>
+        <record>
+            <header>
+                <identifier>oai:test.example.com:105</identifier>
+                <datestamp>2024-01-02T22:00:00Z</datestamp>
+            </header>
+            <metadata>
+                <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+                           xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <dc:title>oai:test.example.com:105</dc:title>
+                </oai_dc:dc>
+            </metadata>
+        </record>
+        <record>
+            <header>
+                <identifier>oai:test.example.com:104</identifier>
+                <datestamp>2024-01-02T23:15:00Z</datestamp>
+            </header>
+            <metadata>
+                <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+                           xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <dc:title>oai:test.example.com:104</dc:title>
+                </oai_dc:dc>
+            </metadata>
+        </record>
+        <record>
+            <header>
+                <identifier>oai:test.example.com:103</identifier>
+                <datestamp>2024-01-03T08:45:30Z</datestamp>
+            </header>
+            <metadata>
+                <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+                           xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <dc:title>oai:test.example.com:103</dc:title>
+                </oai_dc:dc>
+            </metadata>
+        </record>
+    </ListRecords>
+</OAI-PMH>

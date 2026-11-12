@@ -41,6 +41,7 @@ Table of Contents
    installation
    tutorial
    oaipmh
+   interval
    api
    customizing
    development

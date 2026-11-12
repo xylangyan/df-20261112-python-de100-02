@@ -13,6 +13,8 @@ import time
 
 import requests
 
+from sickle.harvest import IntervalHarvester
+from sickle.interval import DateRange, POLICY_STRICT
 from sickle.iterator import BaseOAIIterator, OAIItemIterator
 from sickle.response import OAIResponse
 from .models import (Set, Record, Header, MetadataFormat,
@@ -148,6 +150,62 @@ class Sickle(object):
         params.update({'verb': 'ListRecords'})
         # noinspection PyCallingNonCallable
         return self.iterator(self, params, ignore_deleted=ignore_deleted)
+
+    def HarvestInterval(self, start, end, metadata_prefix, max_span,
+                        policy=POLICY_STRICT, ignore_deleted=False,
+                        set_spec=None):
+        """Harvest a time range using legal, explicit slices.
+
+        The repository's ``Identify`` response is fetched first to
+        determine its date granularity.  The requested range is then
+        split into ``from``/``until`` pairs no wider than ``max_span``.
+
+        ``start`` and ``end`` are inclusive and must be timezone-aware.
+        For repositories that only support day granularity, a range
+        with sub-day bounds is rejected unless ``policy='widen'`` is
+        passed; in that case the request is widened to whole days and
+        filtered by the header datestamps.
+
+        Adjacent slices overlap because OAI-PMH ranges are inclusive.
+        Results are de-duplicated by ``(identifier, datestamp)``, so the
+        same record version is not returned twice while successive
+        versions of an identifier are preserved.
+
+        :param start: Inclusive start of the requested range.
+        :type start: :class:`datetime.datetime`
+        :param end: Inclusive end of the requested range.
+        :type end: :class:`datetime.datetime`
+        :param metadata_prefix: The OAI ``metadataPrefix`` argument.
+        :type metadata_prefix: str
+        :param max_span: Maximum time span covered by a single slice.
+        :type max_span: :class:`datetime.timedelta`
+        :param policy: ``'strict'`` (default) or ``'widen'``.
+        :type policy: str
+        :param ignore_deleted: Skip records flagged as deleted.
+        :type ignore_deleted: bool
+        :param set_spec: Optional OAI ``set`` argument.
+        :type set_spec: str
+        :rtype: :class:`sickle.harvest.IntervalHarvester`
+
+        The returned harvester exposes the actual request parameters
+        and the status of every slice in ``harvester.slices``::
+
+            harvester = sickle.HarvestInterval(...)
+            records = harvester.harvest()
+            for slice_result in harvester.slices:
+                print(slice_result.params, slice_result.status)
+        """
+        if max_span is None:
+            raise ValueError("max_span must be a datetime.timedelta")
+        return IntervalHarvester(
+            self,
+            DateRange(start, end),
+            metadata_prefix=metadata_prefix,
+            max_span=max_span,
+            policy=policy,
+            ignore_deleted=ignore_deleted,
+            set_spec=set_spec,
+        )
 
     def ListIdentifiers(self, ignore_deleted=False, **kwargs):
         """Issue a ListIdentifiers request.

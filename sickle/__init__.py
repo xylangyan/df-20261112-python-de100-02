@@ -12,3 +12,7 @@ __version__ = '0.7.0'
 
 from sickle.response import OAIResponse
 from .app import Sickle
+from .interval import (DateRange, GranularityError,
+                       DAY_GRANULARITY, SECOND_GRANULARITY,
+                       POLICY_STRICT, POLICY_WIDEN)
+from .harvest import IntervalHarvester, SliceResult

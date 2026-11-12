@@ -151,3 +151,45 @@ class OAIItemIterator(BaseOAIIterator):
                 self._next_response()
             else:
                 raise StopIteration
+
+
+class IntervalItemIterator(object):
+    """Iterator over the items of a sequence of OAI item iterators.
+
+    Used for interval harvesting: adjacent time slices overlap on their
+    shared boundary because the OAI-PMH ``from``/``until`` arguments are
+    inclusive.  Items are therefore de-duplicated by their
+    ``(identifier, datestamp)`` pair so that boundary records appear
+    exactly once while successive versions of the same identifier are
+    kept.
+
+    :param iterators: The iterators to chain, in harvest order.
+    :type iterators: iterable of :class:`BaseOAIIterator`
+    """
+
+    def __init__(self, iterators):
+        self.iterators = iterators
+        self._seen = set()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next()
+
+    def next(self):
+        """Return the next item not yet seen in an earlier slice."""
+        for iterator in self.iterators:
+            for item in iterator:
+                header = getattr(item, 'header', item)
+                identifier = header.identifier
+                datestamp = header.datestamp
+                # Items without both header values cannot be matched
+                # reliably, so they are never treated as duplicates.
+                if identifier is not None and datestamp is not None:
+                    key = (identifier, datestamp)
+                    if key in self._seen:
+                        continue
+                    self._seen.add(key)
+                return item
+        raise StopIteration

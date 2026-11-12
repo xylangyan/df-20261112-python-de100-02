@@ -5,6 +5,7 @@
 
     :copyright: Copyright 2015 Mathias Loesch
 """
+import datetime
 import os
 import unittest
 
@@ -14,6 +15,7 @@ import mock
 
 from sickle import Sickle
 from sickle._compat import binary_type, string_types, text_type, to_unicode
+from sickle.interval import (GranularityError, POLICY_STRICT, POLICY_WIDEN)
 from sickle.response import OAIResponse
 from sickle.iterator import OAIResponseIterator
 from sickle.oaiexceptions import BadArgument, CannotDisseminateFormat, \
@@ -21,6 +23,16 @@ from sickle.oaiexceptions import BadArgument, CannotDisseminateFormat, \
     OAIError
 
 this_dir, this_filename = os.path.split(__file__)
+
+
+class NamedResponse(object):
+    """Mimics an HTTP response built from a file in ``sample_data``."""
+
+    def __init__(self, filename):
+        with open(os.path.join(this_dir, 'sample_data', filename), 'r') as fp:
+            text = to_unicode(fp.read())
+        self.text = text
+        self.content = text.encode('utf-8')
 
 
 class MockResponse(object):
@@ -259,3 +271,234 @@ class TestCaseWrongEncoding(unittest.TestCase):
         dict(record.header)
         self.assertEqual(dict(record), record.metadata)
         self.assertIn(u'某人', record.metadata['creator'])
+
+
+UTC = datetime.timezone.utc
+
+
+def interval_mock_harvest(*args, **kwargs):
+    """Serve interval harvesting fixtures based on the request params.
+
+    The ``Identify`` fixture is selected by the ``_identify_file``
+    attribute of the Sickle instance (default
+    ``IdentifySeconds.xml``).  ``ListRecords`` requests are dispatched
+    on their ``from``/``until`` pair; the final pair raises to simulate
+    a failed slice.
+    """
+    if kwargs.get('verb') == 'Identify':
+        identify_file = getattr(args[0], '_identify_file',
+                                'IdentifySeconds.xml')
+        return OAIResponse(NamedResponse(identify_file), kwargs)
+    if kwargs.get('verb') == 'ListRecords':
+        pair = (kwargs.get('from'), kwargs.get('until'))
+        if pair == ('2024-01-04T22:00:00Z', '2024-01-05T21:59:59Z'):
+            raise RuntimeError('simulated HTTP failure')
+        files = {
+            ('2024-01-01T22:00:00Z', '2024-01-02T21:59:59Z'):
+                'IntervalSliceA.xml',
+            ('2024-01-02T22:00:00Z', '2024-01-03T21:59:59Z'):
+                'IntervalSliceB.xml',
+            ('2024-01-03T22:00:00Z', '2024-01-04T21:59:59Z'):
+                'noRecordsMatch.xml',
+            ('2024-01-01', '2024-01-01'): 'IntervalDay1.xml',
+            ('2024-01-02', '2024-01-02'): 'IntervalDay2.xml',
+            ('2024-01-03', '2024-01-03'): 'IntervalDay3.xml',
+        }
+        return OAIResponse(NamedResponse(files[pair]), kwargs)
+    raise ValueError('unexpected request: %r' % (kwargs,))
+
+
+class TestIntervalHarvesting(unittest.TestCase):
+    """Interval harvesting against local fixture data."""
+
+    def __init__(self, methodName='runTest'):
+        super(TestIntervalHarvesting, self).__init__(methodName)
+        self.patch = mock.patch('sickle.app.Sickle.harvest',
+                                interval_mock_harvest)
+
+    def setUp(self):
+        self.patch.start()
+        self.sickle = Sickle('http://localhost')
+
+    def tearDown(self):
+        self.patch.stop()
+
+    def test_seconds_granularity_utc_day_boundary(self):
+        """Slices cross the UTC day boundary; the record updated on the
+        boundary appears in both versions, the duplicate boundary record
+        only once, and the empty slice completes without records."""
+        harvester = self.sickle.HarvestInterval(
+            start=datetime.datetime(2024, 1, 1, 22, 0, tzinfo=UTC),
+            end=datetime.datetime(2024, 1, 4, 21, 59, 59, tzinfo=UTC),
+            metadata_prefix='oai_dc',
+            max_span=datetime.timedelta(days=1),
+        )
+        self.assertEqual(harvester.granularity,
+                         'YYYY-MM-DDThh:mm:ssZ')
+        # The exact parameters sent to the endpoint, for verification.
+        self.assertEqual(
+            [(s.params['from'], s.params['until']) for s in
+             harvester.slices],
+            [('2024-01-01T22:00:00Z', '2024-01-02T21:59:59Z'),
+             ('2024-01-02T22:00:00Z', '2024-01-03T21:59:59Z'),
+             ('2024-01-03T22:00:00Z', '2024-01-04T21:59:59Z')])
+
+        records = harvester.harvest()
+
+        # The final record sequence has no gaps and no duplicates.
+        self.assertEqual(
+            [(r.header.identifier, r.header.datestamp) for r in
+             records],
+            [('oai:test.example.com:101', '2024-01-01T22:00:00Z'),
+             ('oai:test.example.com:102', '2024-01-02T00:30:00Z'),
+             ('oai:test.example.com:103', '2024-01-02T12:00:00Z'),
+             ('oai:test.example.com:105', '2024-01-02T22:00:00Z'),
+             ('oai:test.example.com:104', '2024-01-02T23:15:00Z'),
+             ('oai:test.example.com:103', '2024-01-03T08:45:30Z')])
+        # The boundary record 105 is returned by both adjacent slices
+        # (inclusive from/until) but kept only once.
+        self.assertEqual(
+            [r.header.identifier for r in harvester.slices[0].records],
+            ['oai:test.example.com:101', 'oai:test.example.com:102',
+             'oai:test.example.com:103', 'oai:test.example.com:105'])
+        self.assertEqual(
+            [r.header.identifier for r in harvester.slices[1].records],
+            ['oai:test.example.com:105', 'oai:test.example.com:104',
+             'oai:test.example.com:103'])
+        # The updated version of 103 (new datestamp) is preserved.
+        self.assertEqual(
+            [r.header.datestamp for r in records
+             if r.header.identifier == 'oai:test.example.com:103'],
+            ['2024-01-02T12:00:00Z', '2024-01-03T08:45:30Z'])
+        # Every slice reports its own status; the empty slice
+        # (noRecordsMatch) completes with zero records.
+        self.assertEqual([s.status for s in harvester.slices],
+                         ['completed', 'completed', 'completed'])
+        self.assertEqual(harvester.slices[2].records, [])
+
+    def test_day_granularity_strict_rejects_subday_range(self):
+        """A day-granularity repository must not silently truncate a
+        sub-day range: the strict policy rejects it."""
+        self.sickle._identify_file = 'Identify.xml'
+        with self.assertRaises(GranularityError):
+            self.sickle.HarvestInterval(
+                start=datetime.datetime(2024, 1, 1, 22, 0, tzinfo=UTC),
+                end=datetime.datetime(2024, 1, 3, 12, 0, tzinfo=UTC),
+                metadata_prefix='oai_dc',
+                max_span=datetime.timedelta(days=1),
+                policy=POLICY_STRICT,
+            )
+
+    def test_day_granularity_widen_filters_by_header(self):
+        """With the widen policy the request is expanded to whole days
+        and the results are filtered by their header datestamps."""
+        self.sickle._identify_file = 'Identify.xml'
+        harvester = self.sickle.HarvestInterval(
+            start=datetime.datetime(2024, 1, 1, 22, 0, tzinfo=UTC),
+            end=datetime.datetime(2024, 1, 3, 8, 45, 30, tzinfo=UTC),
+            metadata_prefix='oai_dc',
+            max_span=datetime.timedelta(days=1),
+            policy=POLICY_WIDEN,
+        )
+        self.assertEqual(harvester.granularity, 'YYYY-MM-DD')
+        # The widened day-granularity parameters actually sent.
+        self.assertEqual(
+            [(s.params['from'], s.params['until']) for s in
+             harvester.slices],
+            [('2024-01-01', '2024-01-01'),
+             ('2024-01-02', '2024-01-02'),
+             ('2024-01-03', '2024-01-03')])
+
+        records = harvester.harvest()
+
+        # Records before the start (110) and after the end (112) are
+        # filtered out; 111 lies inside the requested range.  Both
+        # versions of 103 on the boundary day are kept.
+        self.assertEqual(
+            [(r.header.identifier, r.header.datestamp) for r in
+             records],
+            [('oai:test.example.com:101', '2024-01-01T22:00:00Z'),
+             ('oai:test.example.com:102', '2024-01-02T00:30:00Z'),
+             ('oai:test.example.com:111', '2024-01-02T18:00:00Z'),
+             ('oai:test.example.com:103', '2024-01-03T08:00:00Z'),
+             ('oai:test.example.com:103', '2024-01-03T08:45:30Z')])
+        self.assertEqual([s.status for s in harvester.slices],
+                         ['completed', 'completed', 'completed'])
+
+    def test_failed_slice_does_not_stop_other_slices(self):
+        """A failing slice is marked failed; the other slices still
+        complete and their records are returned."""
+        harvester = self.sickle.HarvestInterval(
+            start=datetime.datetime(2024, 1, 1, 22, 0, tzinfo=UTC),
+            end=datetime.datetime(2024, 1, 5, 21, 59, 59, tzinfo=UTC),
+            metadata_prefix='oai_dc',
+            max_span=datetime.timedelta(days=1),
+        )
+        records = harvester.harvest()
+        self.assertEqual([s.status for s in harvester.slices],
+                         ['completed', 'completed', 'completed',
+                          'failed'])
+        failed = harvester.slices[3]
+        self.assertEqual(failed.params['from'],
+                         '2024-01-04T22:00:00Z')
+        self.assertIsInstance(failed.error, RuntimeError)
+        self.assertEqual(failed.records, [])
+        self.assertFalse(failed.completed)
+        self.assertTrue(failed.failed)
+        # Records from the successful slices are still delivered.
+        self.assertEqual(
+            [r.header.identifier for r in records],
+            ['oai:test.example.com:101', 'oai:test.example.com:102',
+             'oai:test.example.com:103', 'oai:test.example.com:105',
+             'oai:test.example.com:104', 'oai:test.example.com:103'])
+
+    def test_unsupported_granularity_rejected(self):
+        """A repository reporting an illegal granularity is rejected."""
+        self.sickle._identify_file = \
+            'IdentifyUnsupportedGranularity.xml'
+        with self.assertRaises(GranularityError):
+            self.sickle.HarvestInterval(
+                start=datetime.datetime(2024, 1, 1, tzinfo=UTC),
+                end=datetime.datetime(2024, 1, 2, tzinfo=UTC),
+                metadata_prefix='oai_dc',
+                max_span=datetime.timedelta(days=1),
+            )
+
+    def test_naive_datetimes_rejected(self):
+        """Range bounds must be timezone-aware."""
+        with self.assertRaises(ValueError):
+            self.sickle.HarvestInterval(
+                start=datetime.datetime(2024, 1, 1),
+                end=datetime.datetime(2024, 1, 2),
+                metadata_prefix='oai_dc',
+                max_span=datetime.timedelta(days=1),
+            )
+
+    def test_set_argument_is_forwarded(self):
+        """The optional OAI ``set`` argument appears in every slice."""
+        harvester = self.sickle.HarvestInterval(
+            start=datetime.datetime(2024, 1, 1, 22, 0, tzinfo=UTC),
+            end=datetime.datetime(2024, 1, 2, 21, 59, 59, tzinfo=UTC),
+            metadata_prefix='oai_dc',
+            max_span=datetime.timedelta(days=1),
+            set_spec='col1:set2',
+        )
+        for slice_result in harvester.slices:
+            self.assertEqual(slice_result.params['set'], 'col1:set2')
+            self.assertEqual(
+                slice_result.params['metadataPrefix'], 'oai_dc')
+            self.assertEqual(slice_result.params['verb'], 'ListRecords')
+
+    def test_timezone_conversion(self):
+        """Bounds given in another timezone are converted to UTC."""
+        plus_eight = datetime.timezone(datetime.timedelta(hours=8))
+        harvester = self.sickle.HarvestInterval(
+            start=datetime.datetime(2024, 1, 2, 6, 0, tzinfo=plus_eight),
+            end=datetime.datetime(2024, 1, 3, 4, 0, tzinfo=plus_eight),
+            metadata_prefix='oai_dc',
+            max_span=datetime.timedelta(days=1),
+        )
+        self.assertEqual(
+            [(s.params['from'], s.params['until']) for s in
+             harvester.slices],
+            [('2024-01-01T22:00:00Z', '2024-01-02T20:00:00Z')])

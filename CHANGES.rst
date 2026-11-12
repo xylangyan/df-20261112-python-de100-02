@@ -1,6 +1,20 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- added interval harvesting (``Sickle.HarvestInterval``): reads the granularity from
+  ``Identify`` and splits a timezone-aware time range into legal inclusive
+  ``from``/``until`` slices
+- day-granularity repositories no longer force callers to truncate ranges:
+  ``policy='strict'`` rejects sub-day ranges while ``policy='widen'`` widens the
+  requests to whole days and filters by header datestamp
+- adjacent slices are de-duplicated by ``(identifier, datestamp)``; updated versions
+  of the same identifier are preserved
+- each slice reports its own completion/failure status, including empty
+  (``noRecordsMatch``) slices
+
 Version 0.7.0
 -------------
 
