@@ -1,0 +1,87 @@
+interactions:
+- request:
+    body: null
+    headers: {}
+    method: GET
+    uri: https://stac-extensions.github.io/processing/v1.0.0/schema.json
+  response:
+    body:
+      string: "{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"$id\":
+        \"https://stac-extensions.github.io/processing/v1.0.0/schema.json#\",\n  \"title\":
+        \"Processing Extension\",\n  \"description\": \"STAC Processing Extension
+        for STAC Items and STAC Collections.\",\n  \"anyOf\": [\n    {\n      \"$comment\":
+        \"This is the schema for STAC Items.\",\n      \"allOf\": [\n        {\n          \"type\":
+        \"object\",\n          \"required\": [\n            \"type\",\n            \"properties\",\n
+        \           \"assets\"\n          ],\n          \"properties\": {\n            \"type\":
+        {\n              \"const\": \"Feature\"\n            },\n            \"properties\":
+        {\n              \"allOf\": [\n                {\n                  \"$ref\":
+        \"#/definitions/requirements\"\n                },\n                {\n                  \"$ref\":
+        \"#/definitions/fields\"\n                }\n              ]\n            },\n
+        \           \"assets\": {\n              \"type\": \"object\",\n              \"additionalProperties\":
+        {\n                \"$ref\": \"#/definitions/fields\"\n              }\n            }\n
+        \         }\n        },\n        {\n          \"$ref\": \"#/definitions/stac_extensions\"\n
+        \       }\n      ]\n    },\n    {\n      \"$comment\": \"This is the schema
+        for STAC Collections (Providers).\",\n      \"allOf\": [\n        {\n          \"type\":
+        \"object\",\n          \"required\": [\n            \"type\",\n            \"providers\"\n
+        \         ],\n          \"properties\": {\n            \"type\": {\n              \"const\":
+        \"Collection\"\n            },\n            \"providers\": {\n              \"type\":
+        \"array\",\n              \"minItems\": 1,\n              \"items\": {\n                \"type\":
+        \"object\",\n                \"oneOf\": [\n                  {\n                    \"allOf\":
+        [\n                      {\n                        \"required\": [\n                          \"roles\"\n
+        \                       ],\n                        \"properties\": {\n                          \"roles\":
+        {\n                            \"type\": \"array\",\n                            \"contains\":
+        {\n                              \"enum\": [\n                                \"producer\",\n
+        \                               \"processor\"\n                              ]\n
+        \                           }\n                          }\n                        }\n
+        \                     },\n                      {\n                        \"$ref\":
+        \"#/definitions/requirements\"\n                      },\n                      {\n
+        \                       \"$ref\": \"#/definitions/fields\"\n                      }\n
+        \                   ]\n                  },\n                  {\n                    \"patternProperties\":
+        {\n                      \"^(?!processing:)\": {}\n                    },\n
+        \                   \"additionalProperties\": false\n                  }\n
+        \               ]\n              }\n            }\n          }\n        },\n
+        \       {\n          \"$ref\": \"#/definitions/stac_extensions\"\n        }\n
+        \     ]\n    },\n    {\n      \"$comment\": \"This is the schema for STAC
+        Collections (Assets).\",\n      \"allOf\": [\n        {\n          \"type\":
+        \"object\",\n          \"anyOf\": [\n            {\n              \"required\":
+        [\n                \"type\",\n                \"assets\"\n              ]\n
+        \           },\n            {\n              \"required\": [\n                \"type\",\n
+        \               \"item_assets\"\n              ]\n            }\n          ],\n
+        \         \"properties\": {\n            \"type\": {\n              \"const\":
+        \"Collection\"\n            },\n            \"assets\": {\n              \"type\":
+        \"object\",\n              \"additionalProperties\": {\n                \"$ref\":
+        \"#/definitions/fields\"\n              }\n            },\n            \"item_assets\":
+        {\n              \"type\": \"object\",\n              \"additionalProperties\":
+        {\n                \"$ref\": \"#/definitions/fields\"\n              }\n            }\n
+        \         }\n        },\n        {\n          \"$ref\": \"#/definitions/stac_extensions\"\n
+        \       }\n      ]\n    }\n  ],\n  \"definitions\": {\n    \"stac_extensions\":
+        {\n      \"type\": \"object\",\n      \"required\": [\n        \"stac_extensions\"\n
+        \     ],\n      \"properties\": {\n        \"stac_extensions\": {\n          \"type\":
+        \"array\",\n          \"contains\": {\n            \"const\": \"https://stac-extensions.github.io/processing/v1.0.0/schema.json\"\n
+        \         }\n        }\n      }\n    },\n    \"requirements\": {\n      \"anyOf\":
+        [\n        {\n          \"required\": [\n            \"processing:lineage\"\n
+        \         ]\n        },\n        {\n          \"required\": [\n            \"processing:level\"\n
+        \         ]\n        },\n        {\n          \"required\": [\n            \"processing:facility\"\n
+        \         ]\n        },\n        {\n          \"required\": [\n            \"processing:software\"\n
+        \         ]\n        }\n      ]\n    },\n    \"fields\": {\n      \"type\":
+        \"object\",\n      \"properties\": {\n        \"processing:lineage\": {\n
+        \         \"title\": \"Processing Lineage Information\",\n          \"type\":
+        \"string\",\n          \"example\": \"Post Processing GRD\"\n        },\n
+        \       \"processing:level\": {\n          \"title\": \"Processing Level\",\n
+        \         \"type\": \"string\",\n          \"examples\": [\n            \"RAW\",\n
+        \           \"L1\",\n            \"L1A\",\n            \"L1B\",\n            \"L1C\",\n
+        \           \"L2\",\n            \"L2A\",\n            \"L3\",\n            \"L4\"\n
+        \         ]\n        },\n        \"processing:facility\": {\n          \"title\":
+        \"Processing Facility\",\n          \"type\": \"string\",\n          \"example\":
+        \"Copernicus S1 Core Ground Segment - DPA\"\n        },\n        \"processing:software\":
+        {\n          \"title\": \"Processing Software Name / version\",\n          \"type\":
+        \"object\",\n          \"patternProperties\": {\n            \".{1,}\": {\n
+        \             \"type\": \"string\"\n            }\n          },\n          \"example\":
+        {\n            \"Sentinel-1 IPF\": \"002.71\"\n          }\n        }\n      },\n
+        \     \"patternProperties\": {\n        \"^(?!processing:)\": {}\n      },\n
+        \     \"additionalProperties\": false\n    }\n  }\n}"
+    headers: {}
+    status:
+      code: 200
+      message: OK
+version: 1

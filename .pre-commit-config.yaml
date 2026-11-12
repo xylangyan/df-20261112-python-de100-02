@@ -1,0 +1,51 @@
+# Configuration file for pre-commit (https://pre-commit.com/).
+# Please run `pre-commit run --all-files` when adding or changing entries.
+
+repos:
+  - repo: https://github.com/asottile/pyupgrade
+    rev: 75992aaa40730136014f34227e0135f63fc951b4
+    hooks:
+      - id: pyupgrade
+        args:
+          - "--py310-plus"
+
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: ruff check --force-exclude --fix --exit-non-zero-on-fix
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff-format
+        entry: ruff format --force-exclude
+        language: system
+        stages: [pre-commit]
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+
+      - id: codespell
+        name: codespell
+        entry: codespell
+        language: system
+        stages: [pre-commit]
+        types_or: [jupyter, markdown, python, shell]
+
+      - id: doc8
+        name: doc8
+        entry: doc8
+        language: system
+        files: \.rst$
+        require_serial: true
+
+      - id: mypy
+        name: mypy
+        entry: mypy
+        args: [--no-incremental]
+        language: system
+        stages: [pre-commit]
+        types: [python]
+        exclude: conftest\.py$
+        require_serial: true
