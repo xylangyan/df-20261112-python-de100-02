@@ -1,0 +1,17 @@
+.idea/
+venv
+*.pyc
+*.pyo
+*.swp
+
+feedgen/tests/tmp_Atomfeed.xml
+
+feedgen/tests/tmp_Rssfeed.xml
+
+tmp_Atomfeed.xml
+
+tmp_Rssfeed.xml
+
+# testing artifacts
+.coverage
+*.egg-info/
