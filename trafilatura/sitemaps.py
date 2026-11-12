@@ -1,0 +1,402 @@
+"""
+Deriving link info from sitemaps.
+"""
+
+import logging
+import re
+from collections.abc import Callable, Iterator
+from configparser import ConfigParser
+from itertools import islice
+from re import Pattern
+from time import sleep
+from urllib.parse import urlsplit
+
+from courlan import (
+    clean_url,
+    extract_domain,
+    filter_urls,
+    get_hostinfo,
+    lang_filter,
+)
+from lxml import etree
+
+from .deduplication import is_similar_domain
+from .downloads import fetch_url, is_live_page
+from .settings import DEFAULT_CONFIG, MAX_LINKS, MAX_SITEMAPS_SEEN
+from .utils import safe_relative_url
+
+LOGGER = logging.getLogger(__name__)
+
+SITEMAP_NAMESPACE = "http://www.sitemaps.org/schemas/sitemap/0.9"
+# sitemaps.org (http or https, with or without a trailing slash) and the legacy Google namespaces
+SITEMAP_NAMESPACE_REGEX = re.compile(r"https?://(?:www\.)?(?:sitemaps\.org|google\.com)/schemas/sitemap/[\d.]+/?$")
+XHTML_REGEX = re.compile(r"<xhtml:link.+?>", re.DOTALL)
+SCHEME_AND_WWW = re.compile(r"^https?://(?:www\.)?", re.IGNORECASE)
+HREFLANG_REGEX = re.compile(r'href=["\'](.+?)["\']')
+WHITELISTED_PLATFORMS = re.compile(
+    r"(?:blogger|blogpost|ghost|hubspot|livejournal|medium|typepad|squarespace|tumblr|weebly|wix|wordpress)\."
+)
+
+# byte order mark and whitespace tolerated before the XML declaration or root element
+LEADING_SPACE = "\ufeff \t\r\n"
+SITEMAP_FORMAT = re.compile(r"^.{0,5}<\?xml|<(?:[\w.-]+:)?(?:sitemapindex|sitemap|urlset)\b")
+DETECT_SITEMAP_LINK = re.compile(r"\.xml(\..{2,4})?$|\.xml[?#]")
+# links end before whitespace, "<", a double quote or a closing single quote
+DETECT_LINKS = re.compile(r'https?://[^\s<"]+(?<!\')')
+HTML_START = re.compile(r"<!doctype html|<html", re.IGNORECASE)
+SCRUB_REGEX = re.compile(r"\?.*$|#.*$")
+POTENTIAL_SITEMAP = re.compile(r"\.xml\b")  # |\bsitemap\b
+
+GUESSES = [
+    "sitemap.xml",
+    "sitemap.xml.gz",
+    "sitemap",
+    "sitemap_index.xml",
+    "sitemap_news.xml",
+]
+
+# sitemaps.org allows up to 50,000 URLs and 50 MB uncompressed per sitemap,
+# above the general 20 MB MAX_FILE_SIZE download cap
+MAX_SITEMAP_SIZE = 52428800
+
+
+class SitemapObject:
+    "Store all necessary information on sitemap download and processing."
+
+    __slots__ = [
+        "base_url",
+        "config",
+        "content",
+        "current_url",
+        "domain",
+        "external",
+        "seen",
+        "sitemap_urls",
+        "target_lang",
+        "urls",
+    ]
+
+    def __init__(
+        self,
+        base_url: str,
+        domain: str,
+        sitemapsurls: list[str],
+        target_lang: str | None = None,
+        external: bool = False,
+        config: ConfigParser = DEFAULT_CONFIG,
+    ) -> None:
+        self.base_url: str = base_url
+        self.config: ConfigParser = config
+        self.content: str = ""
+        self.domain: str = domain
+        self.external: bool = external
+        self.current_url: str = ""
+        self.seen: set[str] = set()
+        self.sitemap_urls: list[str] = sitemapsurls
+        self.target_lang: str | None = target_lang
+        self.urls: list[str] = []
+
+    def fetch(self) -> None:
+        "Fetch a sitemap over the network."
+        LOGGER.debug("fetching sitemap: %s", self.current_url)
+        self.content = (fetch_url(self.current_url, config=self.config) or "").lstrip(LEADING_SPACE)
+        self.seen.add(self.current_url)
+
+    def handle_link(self, link: str, *, is_sitemap: bool | None = None) -> None:
+        """Examine a link and determine if it's valid and if it leads to
+        a sitemap or a web page."""
+        if link == self.current_url:  # safety check
+            return
+        # fix, check, clean and normalize
+        link = safe_relative_url(self.base_url, link)
+        # filter before cleaning: slash-stripping can hide language markers
+        if not lang_filter(link, self.target_lang):
+            return
+        link = clean_url(link, self.target_lang) or ""
+        if not link:
+            return
+
+        newdomain = extract_domain(link, fast=True)
+        if newdomain is None:
+            LOGGER.error("couldn't extract domain: %s", link)
+            return
+
+        # don't take links from another domain and make an exception for main platforms
+        # also bypass: subdomains vs. domains
+        if not self.external and not WHITELISTED_PLATFORMS.search(newdomain) and not is_similar_domain(self.domain, newdomain):
+            LOGGER.warning("link discarded, diverging domain names: %s %s", self.domain, newdomain)
+            return
+
+        if is_sitemap is None:
+            is_sitemap = bool(DETECT_SITEMAP_LINK.search(link))
+        if is_sitemap:
+            self.sitemap_urls.append(link)
+        else:
+            self.urls.append(link)
+
+    def extract_links(self, regex: Pattern[str], index: int, handler: Callable[[str], None]) -> None:
+        "Extract links from the content using pre-defined regex, index and handler."
+        for match in (m[index] for m in islice(regex.finditer(self.content), MAX_LINKS)):
+            handler(match)
+        LOGGER.debug(
+            "%s sitemaps and %s links found for %s",
+            len(self.sitemap_urls),
+            len(self.urls),
+            self.current_url,
+        )
+
+    def extract_sitemap_langlinks(self) -> None:
+        "Extract links corresponding to a given target language."
+        if "hreflang=" not in self.content:
+            return
+
+        lang_regex = re.compile(rf"hreflang=[\"']({re.escape(self.target_lang or '')}.*?|x-default)[\"']", re.DOTALL)
+
+        def handle_lang_link(attrs: str) -> None:
+            "Examine language code attributes."
+            if lang_regex.search(attrs):
+                lang_match = HREFLANG_REGEX.search(attrs)
+                if lang_match:
+                    self.handle_link(lang_match[1])
+
+        self.extract_links(XHTML_REGEX, 0, handle_lang_link)
+
+    def extract_sitemap_links(self) -> None:
+        "Extract locations in the sitemap namespace (or legacy unnamespaced XML)."
+        parser = etree.XMLParser(encoding="utf-8", resolve_entities=False, no_network=True, recover=True)
+        try:
+            tree = etree.fromstring(self.content.encode("utf-8"), parser)
+        except etree.XMLSyntaxError:
+            return
+        if tree is None:
+            return
+        # no namespace, the standard sitemap namespace anywhere, other sitemap namespaces declared on the root element
+        prefixes = dict.fromkeys(
+            [
+                "",
+                f"{{{SITEMAP_NAMESPACE}}}",
+                *(f"{{{ns}}}" for ns in tree.nsmap.values() if ns and SITEMAP_NAMESPACE_REGEX.match(ns)),
+            ]
+        )
+        sitemap_tags = {f"{prefix}sitemap" for prefix in prefixes}
+        url_tags = {f"{prefix}url" for prefix in prefixes}
+        for element in islice(tree.iter(*(f"{prefix}loc" for prefix in prefixes)), MAX_LINKS):
+            # Entity references and nested markup are not part of a location URL.
+            location = (element.text or "").strip()
+            if len(element) == 0 and location.startswith("http"):
+                parent = element.getparent()
+                parent_tag = parent.tag if parent is not None else None
+                is_sitemap = None
+                if parent_tag in sitemap_tags:
+                    is_sitemap = True
+                elif parent_tag in url_tags:
+                    is_sitemap = False
+                self.handle_link(location, is_sitemap=is_sitemap)
+
+    def process(self) -> None:
+        "Download a sitemap and extract the links it contains."
+        plausible = is_plausible_sitemap(self.current_url, self.content)
+        # safeguard
+        if not plausible:
+            return
+        # try to extract links from TXT file
+        if not SITEMAP_FORMAT.match(self.content):
+            self.extract_links(DETECT_LINKS, 0, self.handle_link)
+            return
+        # process XML sitemap
+        if self.target_lang is not None:
+            # only skip the generic extraction if hreflang links were found here
+            found_before = len(self.sitemap_urls) + len(self.urls)
+            self.extract_sitemap_langlinks()
+            if len(self.sitemap_urls) + len(self.urls) > found_before:
+                return
+        self.extract_sitemap_links()
+
+
+def parse_sitemap(
+    content: str,
+    url: str,
+    target_lang: str | None = None,
+    external: bool = False,
+) -> list[str]:
+    """Extract links from caller-provided sitemap text without network requests.
+
+    Args:
+        content: Decoded XML or plain-text sitemap content.
+        url: The sitemap URL, used for domain filtering.
+        target_lang: Optional two-letter language code for URL filtering.
+        external: Include links from other domains.
+
+    Returns:
+        Sorted unique links. For an index, these are nested sitemap URLs;
+        their contents must be fetched and parsed separately by the caller.
+
+    Raises:
+        TypeError: If content is not a string.
+    """
+    if not isinstance(content, str):
+        raise TypeError("content must be a string")
+    domainname, baseurl = get_hostinfo(url)
+    if domainname is None:
+        LOGGER.warning("invalid URL: %s", url)
+        return []
+    sitemap = SitemapObject(baseurl, domainname, [], target_lang, external)
+    sitemap.current_url = url
+    sitemap.content = content.lstrip(LEADING_SPACE)
+    try:
+        sitemap.process()
+    except UnicodeEncodeError:
+        LOGGER.warning("invalid Unicode in sitemap: %s", url)
+        return []
+    return filter_urls(sitemap.urls + sitemap.sitemap_urls, None)
+
+
+def sitemap_search(
+    url: str,
+    target_lang: str | None = None,
+    external: bool = False,
+    sleep_time: float | None = None,
+    max_sitemaps: int = MAX_SITEMAPS_SEEN,
+    config: ConfigParser = DEFAULT_CONFIG,
+) -> list[str]:
+    """Look for sitemaps for the given URL and gather links.
+
+    Args:
+        url: Webpage or sitemap URL as string.
+             Triggers URL-based filter if the webpage isn't a homepage.
+        target_lang: Define a language to filter URLs based on heuristics
+                     (two-letter string, ISO 639-1 format).
+        external: Similar hosts only or external URLs
+                  (boolean, defaults to False).
+        sleep_time: Wait between requests on the same website
+                    (defaults to SLEEP_TIME in the config).
+        max_sitemaps: Maximum number of sitemaps to process.
+        config: Pass configuration values for download control.
+
+    Returns:
+        The extracted links as a list (sorted list of unique links).
+
+    """
+    domainname, baseurl = get_hostinfo(url)
+    if domainname is None:
+        LOGGER.warning("invalid URL: %s", url)
+        return []
+
+    if sleep_time is None:
+        sleep_time = config.getfloat("DEFAULT", "SLEEP_TIME")
+
+    if not is_live_page(baseurl, config):
+        LOGGER.warning("base URL unreachable, dropping sitemap: %s", url)
+        return []
+
+    urlfilter = None
+
+    path = urlsplit(url).path.rstrip("/")
+    if path.endswith((".gz", "sitemap", ".xml", ".txt")) or "/sitemap/" in path:
+        sitemapurls = [url]
+    else:
+        sitemapurls = []
+        # set url filter to target subpages
+        if len(url) > len(baseurl) + 2:
+            urlfilter = url
+
+    # Sitemaps may reach 50 MB uncompressed (sitemaps.org), above the general
+    # MAX_FILE_SIZE cap: fetch them with a raised limit, while robots.txt
+    # and pages keep the configured cap. The caller's config is not mutated.
+    sitemap_config = config
+    if config.getint("DEFAULT", "MAX_FILE_SIZE") < MAX_SITEMAP_SIZE:
+        sitemap_config = ConfigParser()
+        sitemap_config.read_dict(config)
+        sitemap_config.set("DEFAULT", "MAX_FILE_SIZE", str(MAX_SITEMAP_SIZE))
+
+    sitemap = SitemapObject(baseurl, domainname, sitemapurls, target_lang, external, sitemap_config)
+
+    # A sitemap can use a different scheme or www. form of the same host.
+    prefix = SCHEME_AND_WWW.sub("", urlfilter) if urlfilter is not None else None
+    # Guesses are fallbacks, while listed and discovered sitemaps are all followed.
+    guesses: Iterator[str] = iter(())
+    if not sitemap.sitemap_urls:
+        sitemap.sitemap_urls = find_robots_sitemaps(baseurl, config)
+        if not sitemap.sitemap_urls:
+            guesses = (f"{baseurl}/{guess}" for guess in GUESSES)
+
+    while len(sitemap.seen) < max_sitemaps:
+        if sitemap.sitemap_urls:
+            sitemap.current_url = sitemap.sitemap_urls.pop()
+        else:
+            next_guess = next((guess for guess in guesses if guess not in sitemap.seen), None)
+            if next_guess is None or any(prefix is None or SCHEME_AND_WWW.sub("", u).startswith(prefix) for u in sitemap.urls):
+                break
+            sitemap.current_url = next_guess
+
+        if sitemap.seen:
+            sleep(sleep_time)
+        sitemap.fetch()
+        sitemap.process()
+        # sanity check: keep track of visited sitemaps and exclude them
+        sitemap.sitemap_urls = [s for s in sitemap.sitemap_urls if s not in sitemap.seen]
+
+    if prefix is not None:
+        sitemap.urls = [u for u in sitemap.urls if SCHEME_AND_WWW.sub("", u).startswith(prefix)]
+    sitemap.urls = filter_urls(sitemap.urls, None)
+
+    LOGGER.debug("%s sitemap links found for %s", len(sitemap.urls), domainname)
+    return sitemap.urls
+
+
+def is_plausible_sitemap(url: str, contents: str | None) -> bool:
+    """Check if the sitemap corresponds to an expected format,
+    i.e. TXT or XML."""
+    if contents is None:
+        return False
+
+    # strip query and fragments
+    url = SCRUB_REGEX.sub("", url)
+    if isinstance(contents, str):
+        contents = contents.lstrip(LEADING_SPACE)
+
+    # check content
+    if (
+        POTENTIAL_SITEMAP.search(url) and (not isinstance(contents, str) or not SITEMAP_FORMAT.match(contents))
+    ) or HTML_START.search(contents[:150]):
+        LOGGER.warning("not a valid XML sitemap: %s", url)
+        return False
+
+    return True
+
+
+def find_robots_sitemaps(baseurl: str, config: ConfigParser = DEFAULT_CONFIG) -> list[str]:
+    """Guess the location of the robots.txt file and try to extract
+    sitemap URLs from it"""
+    robotstxt = fetch_url(baseurl + "/robots.txt", config=config)
+    return extract_robots_sitemaps(robotstxt, baseurl, config)
+
+
+def extract_robots_sitemaps(robotstxt: str | None, baseurl: str, config: ConfigParser = DEFAULT_CONFIG) -> list[str]:
+    "Read a robots.txt file and find sitemap links."
+    # sanity check on length (cause: redirections)
+    if robotstxt is None or len(robotstxt) > config.getint("DEFAULT", "MAX_FILE_SIZE"):
+        return []
+
+    candidates = []
+    # source: https://github.com/python/cpython/blob/3.12/Lib/urllib/robotparser.py
+    for line in robotstxt.splitlines():
+        # remove optional comment and strip line
+        i = line.find("#")
+        if i >= 0:
+            line = line[:i]
+        line = line.strip()
+        if not line:
+            continue
+        line_parts = line.split(":", 1)
+        if len(line_parts) == 2:
+            line_parts[0] = line_parts[0].strip().lower()
+            if line_parts[0] == "sitemap":
+                # urllib.parse.unquote(line[1].strip())
+                candidates.append(line_parts[1].strip())
+
+    candidates = list(dict.fromkeys(candidates))
+    sitemapurls = [url for u in candidates if u and (url := safe_relative_url(baseurl, u))]
+
+    LOGGER.debug("%s sitemaps found in robots.txt", len(sitemapurls))
+    return sitemapurls

@@ -1,0 +1,229 @@
+# pylint:disable-msg=I1101,W1401
+"""
+Unit tests for the trafilatura's text filters.
+"""
+
+from lxml import html
+
+from trafilatura import extract
+from trafilatura.metadata import Document
+from trafilatura.settings import Extractor, use_config
+from trafilatura.utils import LANGID_FLAG, check_html_lang, detectable_languages, language_filter
+
+ZERO_CONFIG = use_config()
+ZERO_CONFIG["DEFAULT"]["MIN_OUTPUT_SIZE"] = "0"
+ZERO_CONFIG["DEFAULT"]["MIN_EXTRACTED_SIZE"] = "0"
+
+SAMPLE_META = Document()
+
+
+def test_filters():
+    """Test content filtering"""
+    if LANGID_FLAG is True:
+        # main text
+        assert language_filter("Hier ist ein Text auf Deutsch", "", "de", SAMPLE_META)[0] is False
+        assert language_filter("Hier ist ein Text auf Deutsch", "", "en", SAMPLE_META)[0] is True
+        # comments
+        assert language_filter("Hier ist ein Text.", "Die Kommentare sind aber etwas länger.", "de", SAMPLE_META)[0] is False
+        # lang detection on the content
+        doc = html.fromstring(
+            "<html><body><article><p>How many ages hence/Shall this our lofty scene be acted over,/In states unborn and accents yet unknown!</p></article></body></html>"
+        )
+        assert extract(doc, config=ZERO_CONFIG, target_language="de") is None
+        assert extract(doc, config=ZERO_CONFIG, target_language="en") is not None
+        # a language the detector cannot output: no filtering, as documented
+        available = detectable_languages()
+        assert available is not None
+        assert {"de", "en"} <= available
+        assert "zz" not in available
+        assert language_filter("Hier ist ein Text auf Deutsch", "", "zz", SAMPLE_META)[0] is False
+        assert extract(doc, config=ZERO_CONFIG, target_language="zz") is not None
+    else:
+        # no detection
+        assert detectable_languages() is None
+        assert language_filter("Hier ist ein Text.", "", "en", SAMPLE_META)[0] is False
+    # test URL blacklist (non-empty body so the None is caused by the blacklist, not missing content)
+    doc = '<html><head><link rel="canonical" href="https://example.org"/></head><body><article><p>Real body text here.</p></article></body></html>'
+    assert extract(doc, output_format="xml", config=ZERO_CONFIG) is not None
+    assert extract(doc, output_format="xml", url_blacklist={"https://example.org"}, config=ZERO_CONFIG) is None
+
+    ## recursion limit
+    options = Extractor()
+    options.max_tree_size = 500
+    my_p = "<p>abc</p>"
+    doc = html.fromstring("<html><body>" + my_p * 50 + "</body></html>")
+    assert extract(doc, options=options) is not None
+    doc = html.fromstring("<html><body>" + my_p * 501 + "</body></html>")
+    assert extract(doc, options=options) is None
+
+    options.formatting = True
+    my_p = '<p><hi rend="#i">abc</hi></p>'
+    doc = html.fromstring("<html><body>" + my_p * 501 + "</body></html>")
+    assert extract(doc, options=options) is None
+    doc = html.fromstring("<html><body>" + my_p * 499 + "</body></html>")
+    assert extract(doc, options=options) is not None
+
+    # MAX_TREE_SIZE is read from the config (empty value disables the limit)
+    assert Extractor().max_tree_size is None
+    config = use_config()
+    config["DEFAULT"]["MAX_TREE_SIZE"] = "500"
+    assert Extractor(config=config).max_tree_size == 500
+    my_p = "<p>abc</p>"
+    assert extract(html.fromstring("<html><body>" + my_p * 501 + "</body></html>"), config=config) is None
+    assert extract(html.fromstring("<html><body>" + my_p * 50 + "</body></html>"), config=config) is not None
+
+    # HTML lang filter
+    # no lang
+    assert check_html_lang(html.fromstring("<html><body></body></html>"), target_language="en") is True
+    # text + lang
+    my_p = "<p>In sleep a king, but waking no such matter.</p>"
+    if LANGID_FLAG is True:
+        assert (
+            extract(
+                html.fromstring('<html lang="en-US"><body>' + my_p * 50 + "</body></html>"),
+                fast=True,
+                target_language="en",
+            )
+            is not None
+        )
+        assert (
+            extract(
+                html.fromstring('<html lang="en-US"><body>' + my_p * 50 + "</body></html>"),
+                fast=True,
+                target_language="de",
+            )
+            is None
+        )
+        # caught
+        assert (
+            extract(
+                html.fromstring('<html lang="de-DE"><body>' + my_p * 50 + "</body></html>"),
+                fast=False,
+                target_language="de",
+            )
+            is None
+        )
+    else:
+        # not caught, HTML tag used
+        assert (
+            extract(
+                html.fromstring('<html lang="de-DE"><body>' + my_p * 50 + "</body></html>"),
+                fast=False,
+                target_language="de",
+            )
+            is not None
+        )
+    assert check_html_lang(html.fromstring('<html lang="de_DE, en_US"><body></body></html>'), target_language="de") is True
+    assert check_html_lang(html.fromstring('<html lang="de_DE, en_US"><body></body></html>'), target_language="en") is True
+    assert (
+        check_html_lang(html.fromstring('<html lang="de_DE, en_US"><body></body></html>'), target_language="de", strict=True)
+        is True
+    )
+    assert (
+        check_html_lang(html.fromstring('<html lang="de_DE, en_US"><body></body></html>'), target_language="en", strict=True)
+        is True
+    )
+    assert (
+        check_html_lang(
+            html.fromstring('<html><head><meta http-equiv="content-language" content="en"></head><body></body></html>'),
+            target_language="en",
+        )
+        is True
+    )
+    assert (
+        check_html_lang(
+            html.fromstring('<html><head><meta http-equiv="content-language" content="en"></head><body></body></html>'),
+            target_language="de",
+        )
+        is False
+    )
+    assert (
+        check_html_lang(
+            html.fromstring('<html><head><meta http-equiv="content-language" content="DE"></head><body></body></html>'),
+            target_language="de",
+        )
+        is True
+    )
+    # html lang attribute superseded by og:locale
+    assert (
+        check_html_lang(
+            html.fromstring(
+                '<html lang="en-US"><head><meta property="og:locale" content="de_DE" /></head><body></body></html>'
+            ),
+            target_language="de",
+        )
+        is True
+    )
+    assert (
+        check_html_lang(
+            html.fromstring(
+                '<html lang="en-US"><head><meta property="og:locale" content="de_DE" /></head><body></body></html>'
+            ),
+            target_language="en",
+        )
+        is False
+    )
+    assert check_html_lang(html.fromstring('<html lang="en"><body></body></html>'), target_language="it", strict=True) is False
+    assert check_html_lang(html.fromstring('<html lang="en"><body></body></html>'), target_language="it", strict=False) is True
+    assert (
+        check_html_lang(
+            html.fromstring(
+                '<html lang="en-US"><head><meta property="og:locale" content="de_DE" /></head><body></body></html>'
+            ),
+            target_language="de",
+            strict=False,
+        )
+        is True
+    )
+    assert (
+        check_html_lang(
+            html.fromstring(
+                '<html lang="en-US"><head><meta property="og:locale" content="de_DE" /></head><body></body></html>'
+            ),
+            target_language="de",
+            strict=True,
+        )
+        is True
+    )
+
+
+def test_detectable_languages_without_detector(monkeypatch):
+    "Without the language detector there is no list of detectable languages"
+    monkeypatch.setattr("trafilatura.utils.LANGID_FLAG", False)
+    assert detectable_languages() is None
+
+
+def test_prune_xpath():
+    """test xpath pruning (parameter in extract and bare_extraction)"""
+
+    # create example html
+    def doc():
+        my_p = "<p>abc</p>"
+        return html.fromstring("<html><body>" + my_p * 50 + "</body></html>")
+
+    def doc2():
+        my_p = "<p>abc</p>"
+        my_h1 = "<h1>ABC</h1>"
+        return html.fromstring("<html><body>" + my_h1 + my_p * 50 + "</body></html>")
+
+    def doc3():
+        my_p = "<p>abc</p>"
+        my_h1 = "<h1>ABC</h1>"
+        my_h2 = "<h2>42</h2>"
+        return html.fromstring("<html><body>" + my_h1 + my_h2 + my_p * 50 + "</body></html>")
+
+    def doc4():
+        my_p = "<p>abc</p>"
+        return html.fromstring("<html><body>" + my_p + "</body></html><!-- comment -->")
+
+    # test xpath pruning
+    assert extract(doc(), prune_xpath="//p", config=ZERO_CONFIG) == ""
+    assert extract(doc2(), prune_xpath="//p", config=ZERO_CONFIG) == "ABC"
+    assert extract(doc2(), prune_xpath=["//p", "//h1"], config=ZERO_CONFIG) == ""
+    assert extract(doc3(), prune_xpath=["//p", "//h1"], config=ZERO_CONFIG) == "42"
+    assert extract(doc4(), prune_xpath=["//comment()"]) == "abc"
+    # sanity check
+    assert extract(doc(), config=ZERO_CONFIG) != ""
+    assert extract(doc2(), config=ZERO_CONFIG) != ""
+    assert extract(doc3(), config=ZERO_CONFIG) != ""
+    assert extract(doc4(), config=ZERO_CONFIG) != ""

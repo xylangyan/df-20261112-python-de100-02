@@ -1,0 +1,336 @@
+"""
+Implementing a basic command-line interface.
+"""
+
+import argparse
+import logging
+import os
+import stat
+import sys
+from configparser import Error as ConfigError
+from importlib.metadata import version
+from pathlib import Path
+from platform import python_version
+
+from .cli_utils import (
+    HAS_TQDM,
+    check_outputdir_status,
+    cli_crawler,
+    cli_discovery,
+    examine,
+    file_processing_pipeline,
+    load_blacklist,
+    load_input_dict,
+    probe_homepage,
+    url_processing_pipeline,
+    write_result,
+)
+from .settings import PARALLEL_CORES, SUPPORTED_FMT_CLI, Extractor, use_config
+
+# options taking a URL as optional value
+_NAVIGATION_OPTS = ("feed", "sitemap", "crawl", "explore", "probe")
+
+# options that --list neither downloads nor extracts, hence ignores
+_LIST_IGNORED_OPTS = {
+    "fast",
+    "formatting",
+    "precision",
+    "recall",
+    "images",
+    "links",
+    "with_metadata",
+    "only_with_metadata",
+    "comments",
+    "tables",
+    "deduplicate",
+    "output_format",
+    "output_dir",
+    "validate_tei",
+    "archived",
+    "backup_dir",
+    "name_from_url",
+    "progress",
+}
+
+# fix output encoding on some systems
+if hasattr(sys.stdout, "reconfigure") and (sys.stdout.encoding or "").lower() != "utf-8":  # pragma: no cover
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure") and (sys.stderr.encoding or "").lower() != "utf-8":  # pragma: no cover
+    sys.stderr.reconfigure(encoding="utf-8")
+
+
+def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    "Add argument groups and arguments to parser."
+
+    group1 = parser.add_argument_group("Input", "URLs, files or directories to process")
+    group1_ex = group1.add_mutually_exclusive_group()
+    group2 = parser.add_argument_group("Output", "Determines if and how files will be written")
+    group3 = parser.add_argument_group("Navigation", "Link discovery and web crawling")
+    group3_ex = group3.add_mutually_exclusive_group()
+    group4 = parser.add_argument_group("Extraction", "Customization of text and metadata processing")
+    group5 = parser.add_argument_group("Format", "Selection of the output format")
+    group5_ex = group5.add_mutually_exclusive_group()
+
+    group1_ex.add_argument("-i", "--input-file", help="name of input file for batch processing", type=str)
+    group1_ex.add_argument("--input-dir", help="read files from a specified directory (relative path)", type=str)
+    group1_ex.add_argument("-u", "--URL", help="custom URL download", type=str)
+
+    group1.add_argument(
+        "--parallel",
+        help="specify a number of cores/threads for downloads and/or processing",
+        type=int,
+        default=PARALLEL_CORES,
+    )
+    group1.add_argument(
+        "--progress",
+        help="show a progress bar when processing URL lists or input directories (requires tqdm)",
+        action="store_true",
+    )
+    group1.add_argument("-b", "--blacklist", help="file containing unwanted URLs to discard during processing", type=str)
+
+    group2.add_argument("--list", help="display a list of URLs without downloading them", action="store_true")
+    group2.add_argument("-o", "--output-dir", help="write results in a specified directory (relative path)", type=str)
+    group2.add_argument("--backup-dir", help="preserve a copy of downloaded files in a backup directory", type=str)
+    group2.add_argument("--keep-dirs", help="keep input directory structure and file names", action="store_true")
+    group2.add_argument("--name-from-url", help="name downloaded output files using their source URLs", action="store_true")
+
+    group3_ex.add_argument(
+        "--feed",
+        help="look for feeds and/or pass a feed URL as input",
+        nargs="?",
+        const=True,
+        default=False,
+    )
+    group3_ex.add_argument(
+        "--sitemap",
+        help="look for sitemaps for the given website and/or enter a sitemap URL",
+        nargs="?",
+        const=True,
+        default=False,
+    )
+    group3_ex.add_argument(
+        "--crawl",
+        help="crawl a fixed number of pages within a website starting from the given URL",
+        nargs="?",
+        const=True,
+        default=False,
+    )
+    group3_ex.add_argument(
+        "--explore",
+        help="explore the given websites (combination of sitemap and crawl)",
+        nargs="?",
+        const=True,
+        default=False,
+    )
+    group3_ex.add_argument(
+        "--probe",
+        help="probe for extractable content (works best with target language)",
+        nargs="?",
+        const=True,
+        default=False,
+    )
+    group3.add_argument(
+        "--archived",
+        help="try to fetch URLs from the Internet Archive if downloads fail",
+        action="store_true",
+    )
+    group3.add_argument(
+        "--url-filter",
+        help="only process input URLs containing these patterns (space-separated strings)",
+        nargs="+",
+        type=str,
+    )
+    # group3.add_argument('--no-ssl',
+    #                    help="Disable secure connections (to prevent SSLError)",
+    #                    action="store_true")
+
+    group4.add_argument("-f", "--fast", help="fast (without fallback detection)", action="store_true")
+    group4.add_argument("--formatting", help="include text formatting (bold, italic, etc.)", action="store_true", default=None)
+    group4.add_argument("--links", help="include links along with their targets", action="store_true")
+    group4.add_argument("--images", help="include image sources in output", action="store_true")
+    group4.add_argument("--no-comments", dest="comments", help="don't output any comments", action="store_false")
+    group4.add_argument("--no-tables", dest="tables", help="don't output any table elements", action="store_false")
+    group4.add_argument(
+        "--only-with-metadata",
+        help="only output those documents with title, URL and date",
+        action="store_true",
+    )
+    group4.add_argument("--with-metadata", help="extract and add metadata to the output", action="store_true")
+    group4.add_argument("--target-language", help="select a target language (ISO 639-1 codes)", type=str)
+    group4.add_argument("--deduplicate", help="filter out duplicate documents and sections", action="store_true")
+    group4.add_argument("--config-file", help="override standard extraction parameters with a custom config file", type=str)
+    group4.add_argument("--precision", help="favor extraction precision (less noise, possibly less text)", action="store_true")
+    group4.add_argument("--recall", help="favor extraction recall (more text, possibly more noise)", action="store_true")
+
+    # https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_mutually_exclusive_group
+    group5_ex.add_argument("--output-format", help="determine output format", choices=SUPPORTED_FMT_CLI, default="txt")
+    group5_ex.add_argument("--csv", help="shorthand for CSV output", action="store_true")
+    group5_ex.add_argument("--html", help="shorthand for HTML output", action="store_true")
+    group5_ex.add_argument("--json", help="shorthand for JSON output", action="store_true")
+    group5_ex.add_argument("--markdown", help="shorthand for MD output", action="store_true")
+    group5_ex.add_argument("--xml", help="shorthand for XML output", action="store_true")
+    group5_ex.add_argument("--xmltei", help="shorthand for XML TEI output", action="store_true")
+    group5.add_argument("--validate-tei", help="validate XML TEI output", action="store_true")
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="increase logging verbosity (-v or -vv)",
+    )
+    parser.add_argument(
+        "--version",
+        help="show version information and exit",
+        action="version",
+        version=f"Trafilatura {version('trafilatura')} - Python {python_version()}",
+    )
+
+    return parser
+
+
+def _validate_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    "Catch cross-group incompatibilities that argparse cannot express, move a navigation URL to args.URL."
+    if args.progress and not HAS_TQDM:
+        parser.error("--progress requires the tqdm package: pip install tqdm")
+    navigation = next((o for o in _NAVIGATION_OPTS if getattr(args, o) is not False), None)
+    if navigation:
+        if args.input_dir:
+            parser.error(f"--{navigation} cannot be combined with --input-dir")
+        value = getattr(args, navigation)
+        if isinstance(value, str):
+            if value and (args.URL or args.input_file):
+                parser.error(f"--{navigation}: give the URL once, as its value or with -u/--URL or -i/--input-file")
+            args.URL = args.URL or value or None
+            setattr(args, navigation, True)
+        if not (args.URL or args.input_file):
+            parser.error(f"--{navigation} requires a URL, as its value or with -u/--URL or -i/--input-file")
+    # pipes and /dev/stdin are valid lists, the config file is read several times
+    for option, filename, regular in (
+        ("-i/--input-file", args.input_file, False),
+        ("-b/--blacklist", args.blacklist, False),
+        ("--config-file", args.config_file, True),
+    ):
+        if not filename:
+            continue
+        # not Path.exists: it raises on an unreadable parent before Python 3.14
+        try:
+            mode = Path(filename).stat().st_mode
+        except OSError as err:
+            parser.error(f"{option}: {os.strerror(err.errno) if err.errno else err}: {filename}")
+        if stat.S_ISDIR(mode) or (regular and not stat.S_ISREG(mode)):
+            parser.error(f"{option}: not a file: {filename}")
+        if not os.access(filename, os.R_OK):
+            parser.error(f"{option}: cannot read {filename}")
+    # a config file that cannot be parsed would crash mid-run with a traceback
+    if args.config_file:
+        try:
+            config = use_config(args.config_file)
+            Extractor(config=config)
+            # download settings are only read once a download starts, check their types now
+            config.getfloat("DEFAULT", "SLEEP_TIME")
+            config.getint("DEFAULT", "DOWNLOAD_TIMEOUT")
+            config.getint("DEFAULT", "MAX_REDIRECTS")
+            config.getboolean("DEFAULT", "SSRF_PROTECTION")
+            config.getboolean("DEFAULT", "INSECURE_SSL_FALLBACK")
+            config.getboolean("DEFAULT", "EXTERNAL_URLS")
+        except (ConfigError, ValueError, OSError) as err:
+            parser.error(f"--config-file: {err}")
+    if args.parallel < 1:
+        parser.error("--parallel must be a positive integer")
+    if args.name_from_url:
+        if not args.output_dir:
+            parser.error("--name-from-url requires an output directory (-o/--output-dir)")
+        if args.crawl or args.probe or not (args.URL or args.input_file):
+            parser.error("--name-from-url requires -u/--URL or -i/--input-file and cannot be combined with --crawl or --probe")
+    if args.keep_dirs and not (args.input_dir and args.output_dir):
+        parser.error("--keep-dirs requires --input-dir and -o/--output-dir, use --name-from-url to name files after URLs")
+    if args.list:
+        if args.input_dir:
+            print("--list has no effect on --input-dir, the files are processed", file=sys.stderr)
+        elif ignored := sorted(
+            a.option_strings[-1]
+            for a in parser._actions  # noqa: SLF001 (no public dest to flag mapping)
+            # the language filters URLs on the navigation options, otherwise --list ignores it
+            if (a.dest in _LIST_IGNORED_OPTS or (a.dest == "target_language" and not navigation))
+            and getattr(args, a.dest) != a.default
+        ):
+            # emitted before logging is configured, so print directly
+            print(f"--list only prints URLs; these options are ignored: {', '.join(ignored)}", file=sys.stderr)
+
+
+def parse_args(args: list[str]) -> argparse.Namespace:
+    """Define parser for command-line arguments"""
+    parser = argparse.ArgumentParser(description="Command-line interface for Trafilatura")
+    parser = add_args(parser)
+    parsed = map_args(parser.parse_args(args))
+    _validate_args(parser, parsed)
+    return parsed
+
+
+def map_args(args: argparse.Namespace) -> argparse.Namespace:
+    """Map existing options to format and output choices."""
+    # formats
+    for otype in ("csv", "html", "json", "markdown", "xml", "xmltei"):
+        if getattr(args, otype):
+            args.output_format = otype
+            break
+    return args
+
+
+def main() -> None:
+    """Run as a command-line utility."""
+    args = parse_args(sys.argv[1:])
+    process_args(args)
+
+
+def process_args(args: argparse.Namespace) -> None:
+    """Perform the actual processing according to the arguments"""
+    exit_code = 0
+
+    level = logging.DEBUG if args.verbose >= 2 else logging.INFO if args.verbose == 1 else logging.WARNING
+    logging.basicConfig(stream=sys.stderr, level=level)
+
+    if args.blacklist:
+        args.blacklist = load_blacklist(args.blacklist)
+
+    # crawl, probe and lists of URLs print to STDOUT
+    if not (args.crawl or args.probe or (args.list and not args.input_dir)):
+        for directory in (args.output_dir, args.backup_dir):
+            if directory and not check_outputdir_status(directory):
+                sys.exit(1)
+
+    # processing according to mutually exclusive options
+
+    # fetch urls from a feed or a sitemap
+    if args.explore or args.feed or args.sitemap:
+        exit_code = cli_discovery(args)
+
+    # activate crawler/spider
+    elif args.crawl:
+        exit_code = cli_crawler(args)
+
+    # probe and print only
+    elif args.probe:
+        exit_code = probe_homepage(args)
+
+    # read files from an input directory
+    elif args.input_dir:
+        exit_code = file_processing_pipeline(args)
+
+    # read url list from input file or process input URL
+    elif args.input_file or args.URL:
+        url_store = load_input_dict(args)
+        exit_code = url_processing_pipeline(args, url_store) if url_store.total_url_number() else 1
+
+    # read input on STDIN directly
+    else:
+        write_result(examine(sys.stdin.buffer.read(), args), args)
+
+    # change exit code if there are errors
+    if exit_code:
+        sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

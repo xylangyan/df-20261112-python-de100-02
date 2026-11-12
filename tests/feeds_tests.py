@@ -1,0 +1,536 @@
+"""
+Unit tests for feeds reading and parsing.
+"""
+
+import logging
+import os
+import sys
+from configparser import ConfigParser
+from unittest.mock import patch
+
+import pytest
+from courlan import get_hostinfo
+
+from trafilatura import cli_utils
+from trafilatura.cli import main
+from trafilatura.feeds import (
+    FeedParameters,
+    determine_feed,
+    extract_links,
+    find_feed_urls,
+    find_links,
+    handle_link_list,
+    has_rss_root,
+    is_potential_feed,
+    probe_gnews,
+    try_homepage,
+)
+from trafilatura.settings import DEFAULT_CONFIG
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+pytestmark = pytest.mark.usefixtures("mock_network")
+
+TEST_DIR = os.path.abspath(os.path.dirname(__file__))
+RESOURCES_DIR = os.path.join(TEST_DIR, "resources")
+
+XMLDECL = '<?xml version="1.0" encoding="utf-8"?>\n'
+
+
+@pytest.mark.parametrize(
+    "prefix",
+    ["", "\ufeff", "<!-- generator -->", "<!--" + "generator " * 20 + "-->", "<!DOCTYPE rdf:RDF>", XMLDECL],
+)
+def test_rdf_feed_admission(prefix):
+    "RSS 1.0 feeds do not need an XML declaration to reach the RSS parser."
+    feed_url = "https://example.org/feed.rdf"
+    article_url = "https://example.org/article1"
+    feed = (
+        prefix + '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/">'
+        '<channel rdf:about="https://example.org/feed.rdf"><title>Example</title><link>https://example.org/</link>'
+        '<description>Example feed</description><items><rdf:Seq><rdf:li rdf:resource="https://example.org/article1"/>'
+        '</rdf:Seq></items></channel><item rdf:about="https://example.org/article1"><title>Article</title>'
+        f"<link>{article_url}</link></item></rdf:RDF>"
+    )
+    params = FeedParameters("https://example.org", "example.org", feed_url)
+    assert extract_links(feed, params) == [article_url]
+    with patch("trafilatura.feeds.fetch_url", return_value=feed):
+        assert find_feed_urls(feed_url, sleep_time=0) == [article_url]
+
+
+@pytest.mark.parametrize(
+    "source",
+    ["<html></html>", "<RDFnotfeed><link>https://example.org/article1</link></RDFnotfeed>", "<!-- unclosed <rdf:RDF>"],
+)
+def test_feed_admission_rejects_non_feed_roots(source):
+    assert not is_potential_feed(source)
+
+
+def test_atom_extraction():
+    """Test link extraction from an Atom feed"""
+    params = FeedParameters("https://example.org", "example.org", "")
+    assert not extract_links(None, params)
+    assert len(extract_links("<html></html>", params)) == 0
+
+    filepath = os.path.join(RESOURCES_DIR, "feed1.atom")
+    with open(filepath, encoding="utf-8") as f:
+        teststring = f.read()
+    assert len(extract_links(teststring, params)) > 0
+
+    params = FeedParameters("https://www.dwds.de", "dwds.de", "")
+    assert (
+        len(
+            extract_links(
+                f'{XMLDECL}<link type="application/atom+xml" rel="self" href="https://www.dwds.de/api/feed/themenglossar/Corona"/>',
+                params,
+            )
+        )
+        == 0
+    )
+
+    params = FeedParameters("http://example.org", "example.org", "http://example.org")
+    assert (
+        len(
+            extract_links(
+                f'{XMLDECL}<link rel="self" href="http://example.org/article1/"/>',
+                params,
+            )
+        )
+        == 0
+    )
+
+    params = FeedParameters("https://example.org", "example.org", "")
+    assert (
+        len(
+            extract_links(
+                f'{XMLDECL}<link type="application/atom+xml" rel="self" href="123://api.exe"/>',
+                params,
+            )
+        )
+        == 0
+    )
+
+    params = FeedParameters("http://example.org/", "example.org", "http://example.org")
+    assert extract_links(f'{XMLDECL}<link href="http://example.org/article1/"rest"/>', params) == [
+        "http://example.org/article1/"
+    ]  # TODO: remove slash?
+
+
+@pytest.mark.parametrize(
+    "link, expected",
+    [
+        ("<link href='https://example.org/post' rel='alternate'/>", ["https://example.org/post"]),
+        ('<link\nhref="https://example.org/post"/>', ["https://example.org/post"]),
+        ('<link href = "https://example.org/post"/>', ["https://example.org/post"]),
+        ('<link title="One > zero" href="https://example.org/post"/>', ["https://example.org/post"]),
+        (
+            '<link href="https://example.org/post" title="See href=\'https://example.org/other\'"/>',
+            ["https://example.org/post"],
+        ),
+        ('<link href="https://example.org/updates/latest" rel="self"/>', []),
+        ("<link rel='self' href='https://example.org/updates/latest'/>", []),
+        ('<link href="https://example.org/updates/latest" type="application/atom+xml"/>', []),
+        ('<link rel="related" type="text/html" href="https://example.org/post"/>', ["https://example.org/post"]),
+        ('<link rel="replies" type="text/html" href="https://example.org/post#comments"/>', []),
+        ('<link rel="enclosure" type="audio/mpeg" href="https://example.org/episode.mp3"/>', []),
+        ('<link rel="edit" href="https://example.org/edit/post"/>', []),
+        (
+            (
+                '<entry><link rel="alternate" type="text/html" href="https://example.org/post-1"/>\n'
+                '<link rel="replies" type="text/html" href="https://example.org/post-1#comments"/></entry>'
+            ),
+            ["https://example.org/post-1"],
+        ),
+    ],
+)
+def test_atom_link_attributes(link, expected):
+    params = FeedParameters("https://example.org", "example.org", "")
+    assert extract_links(f"<feed>{link}</feed>", params) == expected
+
+
+def test_atom_related_link():
+    "Link blogs like daringfireball.net: the external link is rel=alternate, the post itself rel=related"
+    params = FeedParameters("https://example.org", "example.org", "")
+    feed = (
+        '<feed><entry><link rel="alternate" type="text/html" href="https://news.example.net/story"/>\n'
+        '<link rel="shorturl" type="text/html" href="https://example.com/s/ab1"/>\n'
+        '<link rel="related" type="text/html" href="https://example.org/linked/2026/10/29/story"/></entry></feed>'
+    )
+    assert find_links(feed, params) == ["https://news.example.net/story", "https://example.org/linked/2026/10/29/story"]
+
+
+def test_rss_extraction():
+    """Test link extraction from a RSS feed"""
+    params = FeedParameters("http://example.org/", "example.org", "")
+    assert len(extract_links(f"{XMLDECL}<link>http://example.org/article1/</link>", params)) == 1
+    # CDATA
+    assert extract_links(f"{XMLDECL}<link><![CDATA[http://example.org/article1/]]></link>", params) == [
+        "http://example.org/article1/"
+    ]  # TODO: remove slash?
+
+    # spaces
+    params = FeedParameters("https://www.ak-kurier.de/", "ak-kurier.de", "")
+    assert (
+        len(
+            extract_links(
+                XMLDECL
+                + "<link>\r\n    https://www.ak-kurier.de/akkurier/www/artikel/108815-sinfonisches-blasorchester-spielt-1500-euro-fuer-kinder-in-drk-krankenhaus-kirchen-ein    </link>",
+                params,
+            )
+        )
+        == 1
+    )
+
+    params = FeedParameters("http://example.org", "example.org", "http://example.org")
+    assert len(extract_links(f"{XMLDECL}<link>http://example.org/</link>", params)) == 0
+
+    params = FeedParameters("http://example.org", "example.org", "")
+    assert len(extract_links(f"{XMLDECL}<link>https://example.org</link>", params)) == 0
+
+    # malformed link is skipped
+    params = FeedParameters("https://example.org", "example.org", "")
+    assert extract_links(f"{XMLDECL}<link>http://[::1</link><link>https://example.org/article1</link>", params) == [
+        "https://example.org/article1"
+    ]
+
+    params = FeedParameters("https://www.dwds.de", "dwds.de", "https://www.dwds.de")
+    assert extract_links(f"{XMLDECL}<link>/api/feed/themenglossar/Corona</link>", params) == [
+        "https://www.dwds.de/api/feed/themenglossar/Corona"
+    ]
+
+    # <link .../> tags in the HTML of an item do not make an RSS feed an Atom one
+    params = FeedParameters("https://example.org", "example.org", "")
+    for root in ('<rss version="2.0">', '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'):
+        closing = "</rss>" if root.startswith("<rss") else "</rdf:RDF>"
+        feed = (
+            f"{XMLDECL}<!-- generator -->{root}<channel><item><link>https://example.org/article1</link>"
+            '<description><![CDATA[<p>Hi</p><link rel="stylesheet" href="https://example.org/style.css">]]></description>'
+            f"</item><item><link>https://example.org/article2</link></item></channel>{closing}"
+        )
+        assert extract_links(feed, params) == ["https://example.org/article1", "https://example.org/article2"]
+
+    # the root is found in linear time, whatever precedes it
+    assert has_rss_root("\ufeff <?xml version='1.0'?>\n<!-- c --><!DOCTYPE rss><rss>")
+    assert not has_rss_root("<?xml version='1.0'?><feed>")
+    assert not has_rss_root("<!-- unclosed <rss>")
+    assert not has_rss_root("<?" + "?><?" * 50_000 + "x")
+    assert not has_rss_root("<!--" + "--><!--" * 50_000 + "x")
+
+    params = FeedParameters("https://example.org", "example.org", "")
+    filepath = os.path.join(RESOURCES_DIR, "feed2.rss")
+    with open(filepath, encoding="utf-8") as f:
+        teststring = f.read()
+    assert len(extract_links(teststring, params)) > 0
+
+
+def test_json_extraction():
+    """Test link extraction from a JSON feed"""
+    # find link
+    params = FeedParameters("https://www.jsonfeed.org", "jsonfeed.org", "")
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" type="application/json" title="JSON Feed" href="https://www.jsonfeed.org/feed.json" />></meta><body/></html>',
+                params,
+            )
+        )
+        == 1
+    )
+
+    # extract data
+    assert not extract_links("{/}", params)
+
+    filepath = os.path.join(RESOURCES_DIR, "feed.json")
+    with open(filepath, encoding="utf-8") as f:
+        teststring = f.read()
+    params = FeedParameters("https://npr.org", "npr.org", "")
+    links = extract_links(teststring, params)
+    assert len(links) == 25
+
+    # id as a backup
+    params = FeedParameters("https://example.org", "example.org", "")
+    links = extract_links(
+        r'{"version":"https:\/\/jsonfeed.org\/version\/1","items":[{"id":"https://www.example.org/1","title":"Test"}]}',
+        params,
+    )
+    assert len(links) == 1
+
+
+@pytest.mark.parametrize("items", ["null", "false", '"invalid"', "{}"])
+def test_json_feed_invalid_items_container(items):
+    params = FeedParameters("https://example.org", "example.org", "")
+    assert extract_links(f'{{"items": {items}}}', params) == []
+
+
+def test_json_feed_skips_invalid_entries():
+    params = FeedParameters("https://example.org", "example.org", "")
+    feed = """{"items": [
+        null, 42, "invalid", {},
+        {"url": ["https://example.org/not-a-string"]},
+        {"url": 123},
+        {"url": "https://example.org/first"},
+        {"url": false, "id": "https://example.org/second"}
+    ]}"""
+    assert extract_links(feed, params) == ["https://example.org/first", "https://example.org/second"]
+
+
+def test_feeds_helpers():
+    """Test helper functions for feed extraction"""
+    params = FeedParameters("https://example.org", "example.org", "https://example.org")
+    domainname, baseurl = get_hostinfo("https://example.org")
+    assert domainname == params.domain
+    assert baseurl == params.base
+
+    # empty page
+    assert find_links("<feed></feed>", params) == []
+
+    # nothing useful
+    assert len(determine_feed("", params)) == 0
+    assert determine_feed('<html><link rel="alternate" type="application/rss+xml" href="http://[::1"/></html>', params) == []
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" type="application/rss+xml" title="Feed"/></meta><body/></html>',
+                params,
+            )
+        )
+        == 0
+    )
+    # useful
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" type="application/rss+xml" title="Feed" href="https://example.org/blog/feed/"/></meta><body/></html>',
+                params,
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" type="application/atom+xml" title="Feed" href="https://example.org/blog/feed/"/></meta><body/></html>',
+                params,
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" title="Feed" href="https://example.org/blog/feed/" type="application/atom+xml"/></meta><body/></html>',
+                params,
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" title="Feed" href="https://example.org/blog/atom/"/></meta><body/></html>',
+                params,
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" href="https://www.theguardian.com/international/rss" title="RSS" type="application/rss+xml"></meta><body/></html>',
+                params,
+            )
+        )
+        == 1
+    )
+
+    # no comments wanted
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" type="application/rss+xml" title="Feed" href="https://example.org/blog/comments-feed/"/></meta><body/></html>',
+                params,
+            )
+        )
+        == 0
+    )
+
+    # invalid links
+    params = FeedParameters("example.org", "example.org", "https://example.org")  # fix
+    assert (
+        len(
+            determine_feed(
+                '<html><meta><link rel="alternate" href="12345tralala" title="RSS" type="application/rss+xml"></meta><body/></html>',
+                params,
+            )
+        )
+        == 0
+    )
+
+    # detecting in <a>-elements
+    params = FeedParameters("https://example.org", "example.org", "https://example.org")
+    assert determine_feed('<html><body><a href="https://example.org/feed.xml"><body/></html>', params) == [
+        "https://example.org/feed.xml"
+    ]
+    assert determine_feed('<html><body><a href="https://example.org/feed.atom"><body/></html>', params) == [
+        "https://example.org/feed.atom"
+    ]
+    assert determine_feed('<html><body><a href="https://example.org/rss"><body/></html>', params) == [
+        "https://example.org/rss"
+    ]
+    assert determine_feed(
+        '<html><body><a href="https://example.org/feeds/posts/default/"><body/></html>',
+        params,
+    ) == ["https://example.org/feeds/posts/default/"]
+    assert (
+        len(
+            determine_feed(
+                '<html><body><a href="https://www.test.org/cat/?feed=rss" /><body/></html>',
+                params,
+            )
+        )
+        == 1
+    )
+    assert determine_feed(
+        '<html><body><a href="?feed=rss" /><body/></html>',
+        params,
+    ) == ["https://example.org/?feed=rss"]
+
+    # feed discovery
+    assert not find_feed_urls("http://")
+    assert not find_feed_urls("https://httpbun.com/status/404")
+
+    # feed download and processing
+    links = find_feed_urls("https://www.w3.org/blog/feed/")
+    assert len(links) > 0
+
+    # web page (not a feed) -> discover feed via <link rel="alternate"> then fetch it
+    links = find_feed_urls("https://example.com/blog")
+    assert links == ["https://example.com/blog/post-1"]
+
+    # several candidate feeds, paused in between
+    with patch("trafilatura.feeds.sleep") as mock_sleep:
+        links = find_feed_urls("https://multi.example.com/", sleep_time=0.5)
+    assert links == ["https://multi.example.com/post-1", "https://multi.example.com/post-2"]
+    mock_sleep.assert_called_once_with(0.5)
+
+    # web page that advertises no feed -> no usable feed links
+    assert find_feed_urls("https://example.com/plain") == []
+
+    # Feedburner/Google links
+    assert handle_link_list(["https://feedproxy.google.com/ABCD"], params) == ["https://feedproxy.google.com/ABCD"]
+    # override failed checks
+    assert handle_link_list(["https://feedburner.com/kat/1"], params) == ["https://feedburner.com/kat/1"]
+    # diverging domain names
+    assert not handle_link_list(["https://www.software.info/1"], params)
+
+    # Gnews
+    params = FeedParameters(
+        "https://www.handelsblatt.com",
+        "handelsblatt.com",
+        "https://www.handelsblatt.com",
+        False,
+        "de",
+    )
+    assert probe_gnews(params, None) == ["https://www.handelsblatt.com/article-1"]
+
+
+def test_determine_feed_type_normalization():
+    "Type attributes with charset suffixes or uppercase must still be recognized."
+    params = FeedParameters("https://example.org", "example.org", "https://example.org")
+    htmlstring = (
+        "<html><head>"
+        '<link rel="alternate" type="application/rss+xml; charset=UTF-8" href="/messy.xml"/>'
+        '<link rel="alternate" type="APPLICATION/ATOM+XML" href="/upper.xml"/>'
+        "</head><body/></html>"
+    )
+    assert determine_feed(htmlstring, params) == [
+        "https://example.org/messy.xml",
+        "https://example.org/upper.xml",
+    ]
+
+
+def test_determine_feed_rel_keywords():
+    "rel is a case-insensitive list of keywords: any spelling that contains alternate must be recognized."
+    params = FeedParameters("https://example.org", "example.org", "https://example.org")
+    htmlstring = (
+        "<html><head>"
+        '<link rel="Alternate" type="application/rss+xml" href="/capital.xml"/>'
+        '<link rel="ALTERNATE" type="application/rss+xml" href="/upper.xml"/>'
+        '<link rel="alternate feed" type="application/atom+xml" href="/tokens.xml"/>'
+        '<link rel=" alternate " type="application/rss+xml" href="/spaces.xml"/>'
+        '<link rel="stylesheet" type="text/css" href="/style.css"/>'
+        '<link rel="alternative" type="application/rss+xml" href="/not-a-keyword.xml"/>'
+        "</head><body/></html>"
+    )
+    assert determine_feed(htmlstring, params) == [
+        "https://example.org/capital.xml",
+        "https://example.org/upper.xml",
+        "https://example.org/tokens.xml",
+        "https://example.org/spaces.xml",
+    ]
+
+
+def test_determine_feed_wp_json():
+    "WordPress REST API links (pretty or plain permalinks) share the JSON Feed type but are not feeds."
+    params = FeedParameters("https://example.org", "example.org", "")
+    htmlstring = (
+        "<html><head>"
+        '<link rel="alternate" type="application/json" href="https://example.org/wp-json/wp/v2/posts/42"/>'
+        '<link rel="alternate" type="application/json" href="https://example.org/?rest_route=/wp/v2/posts/42"/>'
+        '<link rel="alternate" type="application/rss+xml" href="https://example.org/feed/"/>'
+        '<link rel="alternate" type="application/feed+json" href="https://example.org/feed.json"/>'
+        "</head><body/></html>"
+    )
+    assert determine_feed(htmlstring, params) == [
+        "https://example.org/feed/",
+        "https://example.org/feed.json",
+    ]
+
+
+def test_try_homepage_forwards_args():
+    "Regression: try_homepage must forward external and sleep_time, not reset them."
+    captured = {}
+
+    def _capture(url, target_lang, external, sleep_time, config):
+        captured.update(url=url, target_lang=target_lang, external=external, sleep_time=sleep_time, config=config)
+        return []
+
+    with patch("trafilatura.feeds.find_feed_urls", _capture):
+        try_homepage("https://example.org", "en", external=True, sleep_time=9.0)
+    assert captured == {
+        "url": "https://example.org",
+        "target_lang": "en",
+        "external": True,
+        "sleep_time": 9.0,
+        "config": DEFAULT_CONFIG,
+    }
+
+
+def test_sleep_time_defaults_to_config():
+    "Without an explicit sleep_time, the wait comes from SLEEP_TIME in the config."
+    config = ConfigParser()
+    config.read_dict(DEFAULT_CONFIG)
+    config.set("DEFAULT", "SLEEP_TIME", "10")
+    with patch("trafilatura.feeds.fetch_url", return_value=None), patch("trafilatura.feeds.sleep") as mock_sleep:
+        find_feed_urls("https://example.org/sub/page", config=config)
+    mock_sleep.assert_called_once_with(10.0)
+
+    with patch("trafilatura.feeds.fetch_url", return_value=None), patch("trafilatura.feeds.sleep") as mock_sleep:
+        find_feed_urls("https://example.org/sub/page", sleep_time=0.5, config=config)
+    mock_sleep.assert_called_once_with(0.5)
+
+
+def test_cli_behavior(capsys):
+    """Test command-line interface with respect to feeds"""
+    testargs = ["", "--list", "--feed", "https://example.org/feed.xml"]
+    with (
+        patch.object(sys, "argv", testargs),
+        patch.object(cli_utils, "find_feed_urls", return_value=["https://example.org/a"]),
+    ):
+        assert main() is None
+    assert capsys.readouterr().out.split() == ["https://example.org/a"]
+    # a feed without links counts as an error
+    with patch.object(sys, "argv", testargs), patch.object(cli_utils, "find_feed_urls", return_value=[]):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 1
