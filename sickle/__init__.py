@@ -12,3 +12,7 @@ __version__ = '0.7.0'
 
 from sickle.response import OAIResponse
 from .app import Sickle
+from .consumer import Checkpoint, CheckpointStore, RecordConsumer
+from .oaiexceptions import (CheckpointConflict, CheckpointError,
+                            CheckpointMismatch, IncompletePage,
+                            UnknownRecord)

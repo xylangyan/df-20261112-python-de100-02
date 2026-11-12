@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <responseDate>2026-11-12T09:00:00Z</responseDate>
+  <request metadataPrefix="oai_dc" verb="ListRecords">http://localhost:8000/oai</request>
+  <ListRecords>
+    <record>
+      <header>
+        <identifier>oai:demo:0004</identifier>
+        <datestamp>2026-11-12T08:00:04Z</datestamp>
+      </header>
+      <metadata>
+        <oai_dc:dc>
+          <dc:title>Demo publication 4</dc:title>
+          <dc:identifier>https://example.org/demo/4</dc:identifier>
+          <dc:creator>Demo Author</dc:creator>
+        </oai_dc:dc>
+      </metadata>
+    </record>
+    <record>
+      <header>
+        <identifier>oai:demo:0005</identifier>
+        <datestamp>2026-11-12T08:00:05Z</datestamp>
+      </header>
+      <metadata>
+        <oai_dc:dc>
+          <dc:title>Demo publication 5</dc:title>
+          <dc:identifier>https://example.org/demo/5</dc:identifier>
+          <dc:creator>Demo Author</dc:creator>
+        </oai_dc:dc>
+      </metadata>
+    </record>
+    <record>
+      <header>
+        <identifier>oai:demo:0006</identifier>
+        <datestamp>2026-11-12T08:00:06Z</datestamp>
+      </header>
+      <metadata>
+        <oai_dc:dc>
+          <dc:title>Demo publication 6</dc:title>
+          <dc:identifier>https://example.org/demo/6</dc:identifier>
+          <dc:creator>Demo Author</dc:creator>
+        </oai_dc:dc>
+      </metadata>
+    </record>
+    <resumptionToken completeListSize="7" cursor="3">demo-page-3</resumptionToken>
+  </ListRecords>
+</OAI-PMH>

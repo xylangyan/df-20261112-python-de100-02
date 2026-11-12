@@ -41,6 +41,7 @@ Table of Contents
    installation
    tutorial
    oaipmh
+   resumable
    api
    customizing
    development

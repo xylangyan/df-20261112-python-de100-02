@@ -3,7 +3,7 @@
     sickle.oaiexceptions
     ~~~~~~~~~~~~~~~~~~~~
 
-    OAI errors.
+    OAI errors and errors raised by the resumable consumption interface.
 
     :copyright: Copyright 2015 Mathias Loesch
 """
@@ -76,3 +76,40 @@ class OAIError(Exception):
     Context specific OAI errors not covered by the classes above.
     """
     pass
+
+
+class CheckpointError(Exception):
+    """Base class for errors raised while resuming a consumption session."""
+    pass
+
+
+class CheckpointConflict(CheckpointError):
+    """A checkpoint cannot be resumed because the remote data has changed.
+
+    Checkpoints deliberately do not fall back to positional indexes: if a
+    page that has been downloaded before now contains a different sequence of
+    records, the only safe behaviour is to stop and let the caller decide what
+    to do with the already delivered records.
+    """
+
+
+class CheckpointMismatch(CheckpointError):
+    """A checkpoint is not compatible with the requested harvest.
+
+    This is raised when the endpoint, the OAI arguments, the metadata format
+    or the OAI verb differ from the values recorded in the checkpoint.
+    """
+
+
+class IncompletePage(CheckpointError):
+    """A checkpoint that has not acknowledged a whole page cannot be resumed
+    from the next page.
+
+    The next resumption token is only progress *after* every record of the
+    current page has been acknowledged; otherwise unacknowledged records would
+    silently be skipped.
+    """
+
+
+class UnknownRecord(CheckpointError):
+    """A record presented to :meth:`ack` is not part of the active page."""

@@ -27,6 +27,8 @@ Features
 - Automatic de-serialization of Dublin Core-encoded metadata payloads to Python
   dictionaries
 - Option for ignoring deleted items
+- Resumable consumption with per-record acknowledgements and durable,
+  conflict-checked checkpoints
 
 Installation
 ------------

@@ -131,3 +131,27 @@ the returned :class:`~sickle.iterator.OAIItemIterator` will skip deleted records
     use the :class:`sickle.iterator.OAIResponseIterator`, the resulting OAI
     responses will still contain the deleted records.
 
+
+Resumable Consumption with Acknowledgements
+===========================================
+
+If records are written to a database, receiving them from Sickle is not the
+same as having stored them. Use :class:`sickle.consumer.RecordConsumer` to
+acknowledge each record individually and to persist a checkpoint after every
+acknowledgement::
+
+    >>> from sickle import Sickle, RecordConsumer, CheckpointStore
+    >>> consumer = RecordConsumer(
+    ...     Sickle('http://elis.da.ulcc.ac.uk/cgi/oai2'),
+    ...     CheckpointStore('harvest.json'), metadataPrefix='oai_dc')
+    >>> while not consumer.finished:
+    ...     for record in consumer.pending_records():
+    ...         persist(record)
+    ...         consumer.ack(record)
+    ...     consumer.confirm_page()
+    ...     if not consumer.finished:
+    ...         consumer.next_page()
+
+Records that were not acknowledged before a crash are delivered again on
+restart; acknowledged records are not. See :doc:`resumable` for details.
+

@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <responseDate>2026-11-12T09:00:00Z</responseDate>
+  <request metadataPrefix="oai_dc" verb="ListRecords">http://localhost:8000/oai</request>
+  <ListRecords/>
+</OAI-PMH>

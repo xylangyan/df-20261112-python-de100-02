@@ -1,6 +1,23 @@
 Changelog
 =========
 
+Development version
+-------------------
+
+- new resumable ``ListRecords`` consumption interface
+  (``sickle.consumer.RecordConsumer``): records are delivered one page at a
+  time and acknowledged individually, with checkpoints persisted to disk on
+  every acknowledgement
+- checkpoints are bound to the endpoint, request parameters and metadata
+  format; they keep the "page downloaded", "records consumed" and "page
+  confirmed" states apart
+- the next resumption token is only used after a whole page has been
+  confirmed; unacknowledged records are redelivered after a crash
+- changed page content on restart raises ``CheckpointConflict`` instead of
+  matching records by their position in the page
+- ``Sickle.ListRecords`` and the existing iterators keep their previous
+  behaviour
+
 Version 0.7.0
 -------------
 
