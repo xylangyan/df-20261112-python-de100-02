@@ -1,3 +1,4 @@
+editables==0.6
 hatch-vcs==0.5.0
 hatchling==1.33.0
 hypothesis==6.170.15
