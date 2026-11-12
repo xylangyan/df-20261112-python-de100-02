@@ -1,0 +1,25 @@
+
+Imports
+
+    >>> from tests.utils import resource_file
+    >>> from owslib.etree import etree
+	>>> from owslib.iso import MD_Metadata
+
+Print testing some metadata elements
+
+    >>> e = etree.parse(resource_file('17bd184a-7e7d-4f81-95a5-041449a7212b_iso.xml'))
+    >>> md = MD_Metadata(e)
+    >>> md.identification[0].title
+    'Air temperature'
+
+    >>> len(md.identification[0].keywords) == len(md.identification[0].keywords)
+    True
+
+    >>> len(md.identification[0].keywords) > 0
+    True
+
+    >>> len(md.identification[0].keywords[0].keywords) > 0
+    True
+
+    >>> md.identification[0].keywords[0].thesaurus['title']
+    'GEMET - INSPIRE themes, version 1.0'

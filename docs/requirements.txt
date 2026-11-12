@@ -1,0 +1,5 @@
+ipykernel
+nbconvert
+nbsphinx
+pypandoc
+sphinx==8.1.3 # issue with nbsphinx in sphinx 8.2, see https://github.com/spatialaudio/nbsphinx/issues/825
