@@ -1,0 +1,48 @@
+
+Rst2html is in the python3-docutils package
+
+Check that pypi can understand the long description
+
+python setup.py --long-description | rst2html > test.html
+
+Create a release tag:
+
+$ cd ~/tmp
+$ git clone https://github.com/eea/odfpy.git
+$ cd odfpy
+
+Run the automated tests:
+
+Install `tox` via `pip` when running the tests for the first time:
+
+$ pip install tox
+
+Run the tests for all supported python versions:
+
+$ tox
+
+Remove the "dev" marker from the version in setup.py and odf/namespaces.py
+
+$ vi setup.py odf/namespaces.py
+
+~check in the difference locally~
+
+$ git ci -a
+$ git tag -a release-1.3.X -m "Tagging the 1.3.X release of the 'odfpy' project."
+$ git push origin release-1.3.X
+or:
+$ git push origin --tags
+
+$ python setup.py build
+$ rm tests/odf
+$ python setup.py sdist bdist_egg
+$ python setup.py sdist bdist_egg upload
+
+Increment the version number and add the "dev" marker.
+
+$ vi setup.py odf/namespaces.py
+
+Check in changes and push them to origin
+
+$ git commit -a
+$ git push
