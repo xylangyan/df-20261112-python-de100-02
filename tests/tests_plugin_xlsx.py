@@ -1,0 +1,227 @@
+# coding: utf-8
+
+# Copyright 2014-2025 Álvaro Justen <https://github.com/turicas/rows/>
+#    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General
+#    Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option)
+#    any later version.
+#    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+#    warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+#    more details.
+#    You should have received a copy of the GNU Lesser General Public License along with this program.  If not, see
+#    <http://www.gnu.org/licenses/>.
+
+from __future__ import unicode_literals
+
+import datetime
+import tempfile
+import unittest
+from collections import OrderedDict
+from decimal import Decimal
+from io import BytesIO
+
+try:
+    import mock
+except ImportError:
+    from unittest import mock
+
+import pytest
+
+import rows
+import tests.utils as utils
+from rows.utils import Source
+
+ALIAS_IMPORT, ALIAS_EXPORT = rows.import_from_xlsx, rows.export_to_xlsx  # Lazy functions (just aliases)
+
+
+class PluginXlsxTestCase(utils.RowsTestMixIn, unittest.TestCase):
+
+    plugin_name = "xlsx"
+    file_extension = "xlsx"
+    filename = "tests/data/all-field-types.xlsx"
+    expected_meta = {
+        "imported_from": "xlsx",
+        "name": "Sheet1",
+        "source": Source(uri=filename, plugin_name=plugin_name, encoding=None),
+    }
+
+    def get_temp_filename(self):
+        temp = tempfile.NamedTemporaryFile(suffix="." + self.file_extension, delete=False)
+        filename = temp.name
+        temp.close()
+        self.files_to_delete.append(filename)
+        return filename
+
+    def test_imports(self):
+        # Force the plugin to load
+        original_import, original_export = rows.plugins.xlsx.import_from_xlsx, rows.plugins.xlsx.export_to_xlsx
+        assert id(ALIAS_IMPORT) != id(original_import)
+        assert id(ALIAS_EXPORT) != id(original_export)
+        new_alias_import, new_alias_export = rows.import_from_xlsx, rows.export_to_xlsx
+        assert id(new_alias_import) == id(original_import)  # Function replaced with loaded one
+        assert id(new_alias_export) == id(original_export)  # Function replaced with loaded one
+
+    @mock.patch("rows.plugins.utils.create_table")
+    def test_import_from_xlsx_uses_create_table(self, mocked_create_table):
+        mocked_create_table.return_value = 42
+        kwargs = {"encoding": "iso-8859-15", "some_key": 123, "other": 456}
+        result = rows.import_from_xlsx(self.filename, **kwargs)
+        assert mocked_create_table.called
+        assert mocked_create_table.call_count == 1
+        assert result == 42
+
+    @mock.patch("rows.plugins.utils.create_table")
+    def test_import_from_xlsx_retrieve_desired_data(self, mocked_create_table):
+        mocked_create_table.return_value = 42
+
+        # import using filename
+        rows.import_from_xlsx(self.filename)
+        args, kwargs = mocked_create_table.call_args_list[0]
+        args = [list(x) for x in args]
+        self.assert_create_table_data((args, kwargs), expected_meta=self.expected_meta)
+
+        # import using fobj
+        with open(self.filename, "rb") as fobj:
+            rows.import_from_xlsx(fobj)
+            args, kwargs = mocked_create_table.call_args_list[1]
+            args = [list(x) for x in args]
+            self.assert_create_table_data((args, kwargs), expected_meta=self.expected_meta)
+
+    def test_export_to_xlsx_filename(self):
+        filename = self.get_temp_filename()
+        rows.export_to_xlsx(utils.table, filename)
+
+        table = rows.import_from_xlsx(filename)
+        self.assert_table_equal(table, utils.table)
+
+        export_in_memory = rows.export_to_xlsx(utils.table, None)
+        result_fobj = BytesIO()
+        result_fobj.write(export_in_memory)
+        result_fobj.seek(0)
+        result_table = rows.import_from_xlsx(result_fobj)
+        self.assert_table_equal(result_table, utils.table)
+
+    def test_export_to_xlsx_fobj_binary(self):
+        filename = self.get_temp_filename()
+        fobj = open(filename, "wb")
+        result = rows.export_to_xlsx(utils.table, fobj)
+        assert result is fobj
+        assert not fobj.closed
+        fobj.close()
+        # TODO: test file contents instead of this side-effect
+        table = rows.import_from_xlsx(filename)
+        self.assert_table_equal(table, utils.table)
+
+    def test_export_to_xlsx_fobj_text(self):
+        filename = self.get_temp_filename()
+        fobj = open(filename, "w")
+        with pytest.raises(ValueError, match="export_to_xlsx must receive a file-object open in binary mode"):
+            rows.export_to_xlsx(utils.table, fobj)
+
+    @mock.patch("rows.plugins.utils.prepare_to_export")
+    def test_export_to_xlsx_uses_prepare_to_export(self, mocked_prepare_to_export):
+        filename = self.get_temp_filename()
+
+        kwargs = {"test": 123, "parameter": 3.14}
+        mocked_prepare_to_export.return_value = iter([utils.table.fields.keys()])
+
+        rows.export_to_xlsx(utils.table, filename, **kwargs)
+        assert mocked_prepare_to_export.called
+        assert mocked_prepare_to_export.call_count == 1
+
+        call = mocked_prepare_to_export.call_args
+        assert call[0] == (utils.table,)
+        assert call[1] == kwargs
+
+    def test_issue_168(self):
+        filename = self.get_temp_filename()
+
+        table = rows.Table(fields=OrderedDict([("jsoncolumn", rows.fields.JSONField)]))
+        table.append({"jsoncolumn": '{"python": 42}'})
+        rows.export_to_xlsx(table, filename)
+
+        table2 = rows.import_from_xlsx(filename)
+        self.assert_table_equal(table, table2)
+
+    @mock.patch("rows.plugins.utils.create_table")
+    def test_start_and_end_row(self, mocked_create_table):
+        rows.import_from_xlsx(self.filename, start_row=6, end_row=8, start_column=4, end_column=7)
+        assert mocked_create_table.called
+        assert mocked_create_table.call_count == 1
+        call_args = mocked_create_table.call_args_list[0]
+        expected_data = [
+            [4.56, 4.56, "12%", datetime.datetime(2050, 1, 2, 0, 0)],
+            [7.89, 7.89, "13.64%", datetime.datetime(2015, 8, 18, 0, 0)],
+            [9.87, 9.87, "13.14%", datetime.datetime(2015, 3, 4, 0, 0)],
+        ]
+        assert expected_data == list(call_args[0][0])
+
+    def test_issue_290_can_read_sheet(self):
+        rows.import_from_xlsx("tests/data/text_in_percent_cell.xlsx")
+        # Before fixing the first part of #290, this would simply crash
+        assert True
+
+    def test_issue_290_one_hundred_read_as_1(self):
+        result = rows.import_from_xlsx("tests/data/text_in_percent_cell.xlsx")
+        # As this test is written, file numeric file contents on first column are
+        # 100%, 23.20%, 1.00%, 10.00%, 100.00%
+        assert result[0][0] == Decimal("1")
+        assert result[1][0] == Decimal("0.2320")
+        assert result[2][0] == Decimal("0.01")
+        assert result[3][0] == Decimal("0.1")
+        assert result[4][0] == Decimal("1")
+
+    def test_issue_290_textual_value_in_percent_col_is_preserved(self):
+        result = rows.import_from_xlsx("tests/data/text_in_percent_cell.xlsx")
+        # As this test is written, file contents on first column are
+        # 100%, 23.20%, 1.00%, 10.00%, 100.00%
+        assert result[5][1] == "text"
+
+    # TODO: add test when sheet.min_row/max_row/min_col/max_col is None
+    # (happens when file is downloaded from Google Spreadsheets).
+
+    def test_define_sheet_name(self):
+        define_sheet_name = rows.plugins.xlsx.define_sheet_name
+
+        assert define_sheet_name(["Sheet1"]) == "Sheet2"
+        assert define_sheet_name(["Test", "Test2"]) == "Sheet1"
+        assert define_sheet_name(["Sheet1", "Sheet2"]) == "Sheet3"
+        assert define_sheet_name(["Sheet1", "Sheet3"]) == "Sheet2"
+
+    def test_is_existing_spreadsheet(self):
+        is_existing_spreadsheet = rows.plugins.xlsx.is_existing_spreadsheet
+
+        def get_source(filename_or_fobj):
+            return Source.from_file(filename_or_fobj, mode="a+b", plugin_name="xlsx")
+
+        filename = "this-file-doesnt-exist.xxx"
+        self.files_to_delete.append(filename)
+        self.assertFalse(is_existing_spreadsheet(get_source(filename)))
+
+        filename = __file__
+        self.assertFalse(is_existing_spreadsheet(get_source(filename)))
+
+        filename = self.filename
+        assert is_existing_spreadsheet(get_source(filename))
+
+        data = BytesIO()
+        with open(self.filename, mode="rb") as fobj:
+            data.write(fobj.read())
+        assert is_existing_spreadsheet(get_source(data))
+
+    def test_write_multiple_sheets(self):
+        filename = self.get_temp_filename()
+
+        table1 = rows.import_from_dicts([{"f1": 1, "f2": 2}, {"f1": 3, "f2": 4}])
+        table2 = rows.import_from_dicts([{"f1": -1, "f2": -2}, {"f1": -3, "f2": -4}])
+        table3 = rows.import_from_dicts([{"f1": 0, "f2": 1}, {"f1": 2, "f2": 3}])
+
+        rows.export_to_xlsx(table1, filename, sheet_name="Test1")
+        rows.export_to_xlsx(table2, filename)
+        rows.export_to_xlsx(table3, filename)
+
+        result = rows.plugins.xlsx.sheet_names(filename)
+        assert result == ["Test1", "Sheet1", "Sheet2"]
+
+        assert list(table1) == list(rows.import_from_xlsx(filename, sheet_name="Test1"))
+        assert list(table2) == list(rows.import_from_xlsx(filename, sheet_name="Sheet1"))
+        assert list(table3) == list(rows.import_from_xlsx(filename, sheet_name="Sheet2"))
