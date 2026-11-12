@@ -11,7 +11,8 @@
 from lxml import etree
 
 from ._compat import PY3, to_str
-from .utils import get_namespace, xml_to_dict
+from .utils import (get_namespace, project_metadata as project_metadata_fields,
+                    xml_to_dict)
 
 
 class ResumptionToken(object):
@@ -152,6 +153,37 @@ class Record(OAIItem):
             self.xml.find(
                 './/' + self._oai_namespace + 'metadata'
             ).getchildren()[0], strip_ns=self._strip_ns)
+
+    def project_metadata(self, fields):
+        """Project record metadata onto an explicit field set.
+
+        Unlike :attr:`metadata`, which keeps its historical dictionary shape,
+        this method selects fields by namespace URI and element path. Paths
+        are absolute, start at the metadata container element, and use Clark
+        notation, for example ``/{http://www.openarchives.org/OAI/2.0/oai_dc/}dc/``
+        ``{http://purl.org/dc/elements/1.1/}title``.
+        Prefix changes in the source XML therefore do not affect the
+        projection.
+
+        Each value is a :class:`sickle.utils.MetadataValue` containing the
+        selected text or attribute value and its source path and line. Values
+        retain XML document order. Missing elements produce an empty list,
+        empty leaf elements produce an empty string, elements containing only
+        children produce ``None``, and mixed content uses only the selected
+        element's direct text (not descendant or tail text).
+
+        :param fields: A mapping of field names to specs, or an iterable of
+                       ``(name, spec)`` pairs. A spec can be a Clark-notation
+                       path or a dictionary with ``path`` and an optional
+                       ``attribute``.
+        """
+        metadata_element = self.xml.find(
+            './/' + self._oai_namespace + 'metadata')
+        if metadata_element is None or len(metadata_element) == 0:
+            return project_metadata_fields(
+                etree.Element('metadata'), fields)
+        return project_metadata_fields(
+            metadata_element.getchildren()[0], fields)
 
 
 class Set(OAIItem):

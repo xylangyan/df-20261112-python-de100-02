@@ -11,4 +11,5 @@
 __version__ = '0.7.0'
 
 from sickle.response import OAIResponse
+from sickle.utils import MetadataField, MetadataValue, project_metadata
 from .app import Sickle

@@ -171,6 +171,17 @@ Record objects represent single OAI records.
         A boolean flag that indicates whether this record is deleted.
 
 
+Metadata Projection
+-------------------
+
+.. autoclass:: sickle.utils.MetadataField
+
+.. autoclass:: sickle.utils.MetadataValue
+    :members:
+
+.. autofunction:: sickle.utils.project_metadata
+
+
 Header Object
 -------------
 
