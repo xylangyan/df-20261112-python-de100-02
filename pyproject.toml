@@ -1,0 +1,97 @@
+[project]
+name = "zeep"
+version = "4.3.3"
+description = "A Python SOAP client"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Michael van Tellingen", email = "michaelvantellingen@gmail.com" }
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "attrs>=17.2.0",
+    "isodate>=0.5.4",
+    "lxml>=4.6.0",
+    "platformdirs>=1.4.0",
+    "requests>=2.7.0",
+    "requests-toolbelt>=0.7.1",
+    "requests-file>=1.5.1",
+]
+
+[project.urls]
+Repository = "https://github.com/mvantellingen/python-zeep"
+Documentation = "https://docs.python-zeep.org"
+Changelog = "https://github.com/mvantellingen/python-zeep/blob/main/CHANGES"
+
+[project.optional-dependencies]
+docs = ["sphinx>=1.4.0"]
+async = [
+    "httpx>=0.15.0",
+    "packaging",
+]
+xmlsec = ["xmlsec>=0.6.1"]
+
+[dependency-groups]
+dev = [
+    "coverage[toml]==7.14.1",
+    "freezegun==1.5.1",
+    "pretend==1.0.9",
+    "pytest-cov==7.1.0",
+    "pytest-httpx",
+    "pytest-asyncio",
+    "pytest==9.1.0",
+    "requests_mock==1.12.1",
+    "ruff==0.15.17",
+]
+
+[build-system]
+requires = ["setuptools>=40.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.coverage.run]
+branch = true
+source = ["zeep"]
+# Store paths relative to the repo root so coverage data collected on
+# different OSes (uv installs the project editable -> src/zeep/...) can be
+# combined without absolute-path mismatches.
+relative_files = true
+
+[tool.coverage.paths]
+source = ["src", "*/src", "*/site-packages"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: isort,
+# BLE: flake8-blind-except, T10: flake8-debugger
+select = ["E", "W", "F", "I", "BLE", "T10"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["zeep", "tests"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "tests",
+]
+markers = [
+    # mark a test to allow socket usage
+    "requests",
+    "network: test case requires network connection",
+]
