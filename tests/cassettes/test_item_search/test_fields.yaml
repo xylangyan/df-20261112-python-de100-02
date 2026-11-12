@@ -1,0 +1,61 @@
+interactions:
+- request:
+    body: '{"collections": ["sentinel-2-c1-l2a"], "intersects": {"type": "Point",
+      "coordinates": [-105.1019, 40.1672]}, "fields": {"include": [], "exclude": ["geometry",
+      "assets", "links"]}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '179'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://earth-search.aws.element84.com/v1/search
+  response:
+    body:
+      string: '{"type":"FeatureCollection","stac_version":"1.0.0","stac_extensions":[],"context":{"limit":10,"matched":1076,"returned":10},"numberMatched":1076,"numberReturned":10,"features":[{"stac_version":"1.0.0","bbox":[-105.365655,39.66104,-104.884569,40.650827],"id":"S2C_T13TDE_20261019T174828_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-19T17:52:59.332000Z"}},{"stac_version":"1.0.0","bbox":[-106.183161,39.655762,-104.884569,40.65079],"id":"S2B_T13TDE_20261017T175511_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-17T18:02:54.448000Z"}},{"stac_version":"1.0.0","bbox":[-106.183161,39.655762,-104.884569,40.65079],"id":"S2A_T13TDE_20261014T175737_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-14T18:03:06.633000Z"}},{"stac_version":"1.0.0","bbox":[-105.357727,39.661065,-104.884569,40.650831],"id":"S2B_T13TDE_20261014T174908_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-14T17:52:57.743000Z"}},{"stac_version":"1.0.0","bbox":[-106.183161,39.655762,-104.884569,40.65079],"id":"S2C_T13TDE_20261012T175951_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-12T18:02:56.763000Z"}},{"stac_version":"1.0.0","bbox":[-105.369501,39.661028,-104.884569,40.650825],"id":"S2A_T13TDE_20261011T174839_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-11T17:53:10.962000Z"}},{"stac_version":"1.0.0","bbox":[-105.368685,39.661031,-104.884569,40.650825],"id":"S2C_T13TDE_20261009T174655_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-09T17:53:00.529000Z"}},{"stac_version":"1.0.0","bbox":[-106.183161,39.655762,-104.884569,40.65079],"id":"S2B_T13TDE_20261007T175508_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-07T18:02:54.969000Z"}},{"stac_version":"1.0.0","bbox":[-105.36204,39.661052,-104.884569,40.65083],"id":"S2B_T13TDE_20261004T174432_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-04T17:52:58.720000Z"}},{"stac_version":"1.0.0","bbox":[-106.183161,39.655762,-104.884569,40.65079],"id":"S2C_T13TDE_20261002T175728_L2A","collection":"sentinel-2-c1-l2a","type":"Feature","properties":{"datetime":"2026-10-02T18:02:56.836000Z"}}],"links":[{"rel":"next","title":"Next
+        page of Items","method":"POST","type":"application/geo+json","href":"https://earth-search.aws.element84.com/v1/search","merge":false,"body":{"intersects":{"type":"Point","coordinates":[-105.1019,40.1672]},"fields":{"include":[],"exclude":["geometry","assets","links"]},"collections":["sentinel-2-c1-l2a"],"next":"2026-10-02T18:02:56.836000Z,S2C_T13TDE_20261002T175728_L2A,sentinel-2-c1-l2a"}},{"rel":"root","type":"application/json","href":"https://earth-search.aws.element84.com/v1"}]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '732'
+      Content-Type:
+      - application/geo+json; charset=utf-8
+      Date:
+      - Tue, 20 Oct 2026 16:42:15 GMT
+      Via:
+      - 1.1 c8eaab496487afbdb9029903afd8f5b2.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - PfUNzaRyKHFy4Z8rRcxqvirzO3fiaNdwllCzRfIRop9EvwJbJNlYog==
+      X-Amz-Cf-Pop:
+      - DEN53-P4
+      X-Amzn-Trace-Id:
+      - Root=1-6ad799e7-18b07914105e0fa20c715cc5;Parent=408ffed0ade0f632;Sampled=0;Lineage=1:9e2884e9:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-origin:
+      - '*'
+      etag:
+      - W/"b61-lA5HdoJ86AfJIs1UYKB3Z73Y2fo"
+      x-amz-apigw-id:
+      - FjT8QHC_PHcEVsQ=
+      x-amzn-Remapped-content-length:
+      - '2913'
+      x-amzn-RequestId:
+      - 3e84cf99-ac00-4788-b042-4aec40f0b762
+      x-powered-by:
+      - Express
+    status:
+      code: 200
+      message: OK
+version: 1

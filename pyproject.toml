@@ -1,0 +1,127 @@
+[project]
+name = "pystac-client"
+description = "Python library for searching SpatioTemporal Asset Catalog (STAC) APIs."
+readme = "README.md"
+authors = [
+    { name = "Jon Duckworth", email = "duckontheweb@gmail.com" },
+    { name = "Matthew Hanson", email = "matt.a.hanson@gmail.com" },
+]
+maintainers = [{ name = "Pete Gadomski", email = "pete.gadomski@gmail.com" }]
+keywords = ["pystac", "imagery", "raster", "catalog", "STAC"]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Natural Language :: English",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.28.2",
+    "pystac-core>=1.15.2",
+    "python-dateutil>=2.8.2",
+]
+dynamic = ["version"]
+
+[project.scripts]
+stac-client = "pystac_client.cli:cli"
+
+[dependency-groups]
+dev = [
+    "codespell~=2.4.0",
+    "coverage~=7.2",
+    "cql2>=0.3.7",
+    "doc8~=2.0.0",
+    "importlib-metadata~=9.0",
+    "mypy~=2.1",
+    "orjson~=3.8",
+    "pre-commit~=4.0",
+    "pytest-benchmark~=5.3.0",
+    "pytest-console-scripts~=1.4.0",
+    "pytest-cov~=7.0",
+    "pytest-recording~=0.13",
+    "pytest~=9.0",
+    "recommonmark~=0.7.1",
+    "requests-mock~=1.12",
+    "ruff==0.17.3",
+    "types-python-dateutil>=2.8.19,<2.10.0",
+    "types-requests~=2.33.0",
+    "urllib3>=2.4",
+]
+docs = [
+    "Sphinx~=8.0",
+    "boto3~=1.26",
+    "cartopy~=0.21",
+    "geojson~=3.3.0",
+    "geopandas~=1.1.1",
+    "geoviews~=1.9",
+    "hvplot~=0.12.0",
+    "ipykernel~=7.0",
+    "ipython~=8.12",
+    "jinja2>=3.0,<4.0",
+    "matplotlib~=3.8",
+    "myst-parser~=4.0",
+    "nbsphinx~=0.9",
+    "pydata-sphinx-theme~=0.13",
+    "pygeoif~=1.0",
+    "scipy~=1.10",
+    "sphinxcontrib-fulltoc~=1.2",
+]
+
+[project.urls]
+homepage = "https://github.com/stac-utils/pystac-client"
+documentation = "https://pystac-client.readthedocs.io"
+repository = "https://github.com/stac-utils/pystac-client.git"
+changelog = "https://github.com/stac-utils/pystac-client/blob/main/CHANGELOG.md"
+discussions = "https://github.com/radiantearth/stac-spec/discussions/categories/stac-software"
+
+[tool.setuptools.packages.find]
+include = ["pystac_client*"]
+exclude = ["tests*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pystac_client.version.__version__" }
+
+[tool.doc8]
+ignore-path = "docs/_build,docs/tutorials"
+max-line-length = 130
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+ignore = ["E722", "E731"]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"test_item_search.py" = ["E501"]
+
+[tool.pytest.ini_options]
+markers = "vcr: records network activity"
+addopts = "--benchmark-skip --block-network -Werror"
+filterwarnings = [
+    "ignore::ResourceWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+
+[tool.mypy]
+show_error_codes = true
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["jinja2"]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

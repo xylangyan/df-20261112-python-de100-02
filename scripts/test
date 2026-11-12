@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+if [[ -n "${CI}" ]]; then
+    set -x
+fi
+
+function usage() {
+    echo -n \
+        "Usage: $(basename "$0")
+Execute project linters and test suites.
+"
+}
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    if [ "${1:-}" = "--help" ]; then
+        usage
+    else
+        ./scripts/lint
+        ./scripts/format
+        # Test suite with coverage enabled
+        pytest --cov pystac_client --cov-report term-missing
+        coverage xml
+    fi
+fi

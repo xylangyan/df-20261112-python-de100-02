@@ -1,0 +1,847 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://raw.githubusercontent.com/stac-utils/pystac/v1.9.0/docs/example-catalog/catalog.json
+  response:
+    body:
+      string: "{\n  \"type\": \"Catalog\",\n  \"stac_version\": \"1.0.0\",\n  \"stac_extensions\":
+        [],\n  \"id\": \"landsat-stac-collection-catalog\",\n  \"title\": \"STAC for
+        Landsat data\",\n  \"description\": \"STAC for Landsat data\",\n  \"links\":
+        [\n    {\n      \"href\": \"./catalog.json\",\n      \"rel\": \"self\"\n    },\n
+        \   {\n      \"href\": \"./catalog.json\",\n      \"rel\": \"root\"\n    },\n
+        \   {\n      \"href\": \"./landsat-8-l1/collection.json\",\n      \"rel\":
+        \"child\"\n    }\n  ]\n}"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '209'
+      Content-Security-Policy:
+      - default-src 'none'; style-src 'unsafe-inline'; sandbox
+      Content-Type:
+      - text/plain; charset=utf-8
+      Cross-Origin-Resource-Policy:
+      - cross-origin
+      Date:
+      - Tue, 20 Oct 2026 16:40:56 GMT
+      ETag:
+      - W/"4f517310845b65ca442e14b6613d76cdc06523f64710d84a6d49b93c49d0dca9"
+      Expires:
+      - Tue, 20 Oct 2026 16:45:56 GMT
+      Source-Age:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Authorization,Accept-Encoding
+      Via:
+      - 1.1 varnish
+      X-Cache:
+      - MISS
+      X-Cache-Hits:
+      - '0'
+      X-Content-Type-Options:
+      - nosniff
+      X-Fastly-Request-ID:
+      - 23ee18e0a1feff6c21fd486268390759a158696f
+      X-Frame-Options:
+      - deny
+      X-GitHub-Request-Id:
+      - 874E:163E48:1020B:1670F:6AD79996
+      X-Served-By:
+      - cache-den-kden1300073-DEN
+      X-Timer:
+      - S1792514456.167202,VS0,VE141
+      X-XSS-Protection:
+      - 1; mode=block
+      x-github-edge-region:
+      - iad
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://raw.githubusercontent.com/stac-utils/pystac/v1.9.0/docs/example-catalog/landsat-8-l1/collection.json
+  response:
+    body:
+      string: "{\n  \"type\": \"Collection\",\n  \"stac_version\" : \"1.0.0\",\n  \"stac_extensions\"
+        : [\n    \"eo\",\n    \"view\",\n    \"https://example.com/stac/landsat-extension/1.0/schema.json\"\n
+        \ ],\n  \"id\" : \"landsat-8-l1\",\n  \"title\" : \"Landsat 8 L1\",\n  \"description\"
+        : \"Landsat 8 imagery radiometrically calibrated and orthorectified using
+        ground points and Digital Elevation Model (DEM) data to correct relief displacement.\",\n
+        \ \"keywords\" : [\n    \"landsat\",\n    \"earth observation\",\n    \"usgs\"\n
+        \ ],\n  \"license\" : \"proprietary\",\n  \"providers\" : [\n    {\n      \"name\"
+        : \"Development Seed\",\n      \"roles\" : [\n        \"processor\"\n      ],\n
+        \     \"url\" : \"https://github.com/sat-utils/sat-api\"\n    }\n  ],\n  \"extent\"
+        : {\n    \"spatial\" : {\n      \"bbox\" : [\n        [\n          -180.0,\n
+        \         -90.0,\n          180.0,\n          90.0\n        ]\n      ]\n    },\n
+        \   \"temporal\" : {\n      \"interval\" : [\n        [\n          \"2018-05-21T15:44:59Z\",\n
+        \         \"2018-07-08T15:45:34Z\"\n        ]\n      ]\n    }\n  },\n  \"summaries\":
+        {},\n  \"properties\" : {\n    \"collection\" : \"landsat-8-l1\",\n    \"instruments\"
+        : [\"OLI_TIRS\"],\n    \"view:sun_azimuth\" : 149.01607154,\n    \"eo:bands\"
+        : [\n      {\n        \"name\" : \"B1\",\n        \"full_width_half_max\"
+        : 0.02,\n        \"center_wavelength\" : 0.44,\n        \"common_name\" :
+        \"coastal\"\n      },\n      {\n        \"name\" : \"B2\",\n        \"full_width_half_max\"
+        : 0.06,\n        \"center_wavelength\" : 0.48,\n        \"common_name\" :
+        \"blue\"\n      },\n      {\n        \"name\" : \"B3\",\n        \"full_width_half_max\"
+        : 0.06,\n        \"center_wavelength\" : 0.56,\n        \"common_name\" :
+        \"green\"\n      },\n      {\n        \"name\" : \"B4\",\n        \"full_width_half_max\"
+        : 0.04,\n        \"center_wavelength\" : 0.65,\n        \"common_name\" :
+        \"red\"\n      },\n      {\n        \"name\" : \"B5\",\n        \"full_width_half_max\"
+        : 0.03,\n        \"center_wavelength\" : 0.86,\n        \"common_name\" :
+        \"nir\"\n      },\n      {\n        \"name\" : \"B6\",\n        \"full_width_half_max\"
+        : 0.08,\n        \"center_wavelength\" : 1.6,\n        \"common_name\" : \"swir16\"\n
+        \     },\n      {\n        \"name\" : \"B7\",\n        \"full_width_half_max\"
+        : 0.22,\n        \"center_wavelength\" : 2.2,\n        \"common_name\" : \"swir22\"\n
+        \     },\n      {\n        \"name\" : \"B8\",\n        \"full_width_half_max\"
+        : 0.18,\n        \"center_wavelength\" : 0.59,\n        \"common_name\" :
+        \"pan\"\n      },\n      {\n        \"name\" : \"B9\",\n        \"full_width_half_max\"
+        : 0.02,\n        \"center_wavelength\" : 1.37,\n        \"common_name\" :
+        \"cirrus\"\n      },\n      {\n        \"name\" : \"B10\",\n        \"full_width_half_max\"
+        : 0.8,\n        \"center_wavelength\" : 10.9,\n        \"common_name\" : \"lwir11\"\n
+        \     },\n      {\n        \"name\" : \"B11\",\n        \"full_width_half_max\"
+        : 1,\n        \"center_wavelength\" : 12,\n        \"common_name\" : \"lwir2\"\n
+        \     }\n    ],\n    \"view:off_nadir\" : 0,\n    \"view:azimuth\" : 0,\n
+        \   \"platform\" : \"landsat-8\",\n    \"gsd\" : 15,\n    \"view:sun_elevation\"
+        : 59.214247\n  },\n  \"links\" : [\n    {\n      \"href\" : \"../catalog.json\",\n
+        \     \"rel\" : \"root\"\n    },\n    {\n      \"href\" : \"../catalog.json\",\n
+        \     \"rel\" : \"parent\"\n    },\n    {\n      \"href\" : \"./collection.json\",\n
+        \     \"rel\" : \"self\"\n    },\n    {\n      \"href\" : \"./2018-06/LC80140332018166LGN00.json\",\n
+        \     \"rel\" : \"item\"\n    },\n    {\n      \"href\" : \"./2018-05/LC80150322018141LGN00.json\",\n
+        \     \"rel\" : \"item\"\n    },\n    {\n      \"href\" : \"./2018-07/LC80150332018189LGN00.json\",\n
+        \     \"rel\" : \"item\"\n    },\n    {\n      \"href\" : \"./2018-06/LC80300332018166LGN00.json\",\n
+        \     \"rel\" : \"item\"\n    }\n  ]\n}\n"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '959'
+      Content-Security-Policy:
+      - default-src 'none'; style-src 'unsafe-inline'; sandbox
+      Content-Type:
+      - text/plain; charset=utf-8
+      Cross-Origin-Resource-Policy:
+      - cross-origin
+      Date:
+      - Tue, 20 Oct 2026 16:40:56 GMT
+      ETag:
+      - W/"d7e83b66298977e660cd41eced9df63c47c5075485bc81bbb67f17a4df051e24"
+      Expires:
+      - Tue, 20 Oct 2026 16:45:56 GMT
+      Source-Age:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Authorization,Accept-Encoding
+      Via:
+      - 1.1 varnish
+      X-Cache:
+      - MISS
+      X-Cache-Hits:
+      - '0'
+      X-Content-Type-Options:
+      - nosniff
+      X-Fastly-Request-ID:
+      - 31c38fe1939808bc703887fc23a82705c22b26c3
+      X-Frame-Options:
+      - deny
+      X-GitHub-Request-Id:
+      - C1DA:45EAE:E3C9:147EF:6AD79998
+      X-Served-By:
+      - cache-den-kden1300046-DEN
+      X-Timer:
+      - S1792514456.334333,VS0,VE105
+      X-XSS-Protection:
+      - 1; mode=block
+      x-github-edge-region:
+      - iad
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://raw.githubusercontent.com/stac-utils/pystac/v1.9.0/docs/example-catalog/landsat-8-l1/2018-06/LC80140332018166LGN00.json
+  response:
+    body:
+      string: "{\n  \"type\": \"Feature\",\n  \"id\": \"LC80140332018166LGN00\",\n
+        \ \"stac_version\" : \"1.0.0\",\n  \"stac_extensions\" : [\n    \"https://stac-extensions.github.io/eo/v1.1.0/schema.json\",\n
+        \   \"https://stac-extensions.github.io/view/v1.0.0/schema.json\",\n    \"https://stac-extensions.github.io/projection/v1.1.0/schema.json\"\n
+        \ ],\n  \"bbox\": [\n    -76.66703,\n    37.82561,\n    -73.94861,\n    39.95958\n
+        \ ],\n  \"geometry\": {\n    \"type\": \"Polygon\",\n    \"coordinates\":
+        [\n      [\n        [\n          -76.12180471942207,\n          39.95810181489563\n
+        \       ],\n        [\n          -73.94910518227414,\n          39.55117185146004\n
+        \       ],\n        [\n          -74.49564725552679,\n          37.826064511480496\n
+        \       ],\n        [\n          -76.66550404911956,\n          38.240699151776084\n
+        \       ],\n        [\n          -76.12180471942207,\n          39.95810181489563\n
+        \       ]\n      ]\n    ]\n  },\n  \"collection\": \"landsat-8-l1\",\n  \"properties\":
+        {\n    \"collection\": \"landsat-8-l1\",\n    \"datetime\": \"2018-06-15T15:39:09Z\",\n
+        \   \"view:sun_azimuth\": 125.59055137,\n    \"view:sun_elevation\": 66.54485226,\n
+        \   \"eo:cloud_cover\": 22,\n    \"instruments\": [\"OLI_TIRS\"],\n    \"view:off_nadir\":
+        0,\n    \"platform\": \"landsat-8\",\n    \"gsd\": 30,\n    \"proj:epsg\":
+        32618,\n    \"proj:transform\": [357585.0, 30.0, 0.0, 4423815.0, 0.0, -30.0],\n
+        \   \"proj:geometry\": {\n      \"type\": \"Polygon\",\n      \"coordinates\":
+        [\n        [\n          [357585.0, 4187685.0],\n          [357585.0, 4423815.0],\n
+        \         [589815.0, 4423815.0],\n          [589815.0, 4187685.0],\n          [357585.0,
+        4187685.0]\n        ]\n      ]\n    },\n    \"proj:shape\": [7741, 7871]\n
+        \ },\n  \"assets\": {\n    \"index\": {\n      \"type\": \"text/html\",\n
+        \     \"title\": \"HTML index page\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/index.html\",\n
+        \     \"roles\": []\n    },\n    \"thumbnail\": {\n      \"title\": \"Thumbnail
+        image\",\n      \"type\": \"image/jpeg\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_thumb_large.jpg\",\n
+        \     \"roles\" : [\n        \"thumbnail\"\n      ]\n    },\n    \"B1\": {\n
+        \     \"type\": \"image/tiff\",\n      \"title\": \"Band 1 (coastal)\",\n
+        \     \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B1.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B1\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 0.44,\n          \"common_name\" : \"coastal\"\n        }\n      ]\n    },\n
+        \   \"B2\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 2
+        (blue)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B2.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B2\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.48,\n          \"common_name\" : \"blue\"\n        }\n      ]\n    },\n
+        \   \"B3\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 3
+        (green)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B3.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B3\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.56,\n          \"common_name\" : \"green\"\n        }\n      ]\n    },\n
+        \   \"B4\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 4
+        (red)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B4.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B4\",\n          \"full_width_half_max\" : 0.04,\n          \"center_wavelength\"
+        : 0.65,\n          \"common_name\" : \"red\"\n        }\n      ]\n    },\n
+        \   \"B5\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 5
+        (nir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B5.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B5\",\n          \"full_width_half_max\" : 0.03,\n          \"center_wavelength\"
+        : 0.86,\n          \"common_name\" : \"nir\"\n        }\n      ]\n    },\n
+        \   \"B6\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 6
+        (swir16)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B6.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B6\",\n          \"full_width_half_max\" : 0.08,\n          \"center_wavelength\"
+        : 1.6,\n          \"common_name\" : \"swir16\"\n        }\n      ]\n    },\n
+        \   \"B7\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 7
+        (swir22)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B7.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B7\",\n          \"full_width_half_max\" : 0.22,\n          \"center_wavelength\"
+        : 2.2,\n          \"common_name\" : \"swir22\"\n        }\n      ]\n    },\n
+        \   \"B8\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 8
+        (pan)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B8.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B8\",\n          \"full_width_half_max\" : 0.18,\n          \"center_wavelength\"
+        : 0.59,\n          \"common_name\" : \"pan\"\n        }\n      ]\n    },\n
+        \   \"B9\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 9
+        (cirrus)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B9.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B9\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 1.37,\n          \"common_name\" : \"cirrus\"\n        }\n      ]\n    },\n
+        \   \"B10\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 10
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B10.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B10\",\n          \"full_width_half_max\" : 0.8,\n          \"center_wavelength\"
+        : 10.9,\n          \"common_name\" : \"lwir11\"\n        }\n      ]\n    },\n
+        \   \"B11\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 11
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_B11.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B11\",\n          \"full_width_half_max\" : 1,\n          \"center_wavelength\"
+        : 12,\n          \"common_name\" : \"lwir2\"\n        }\n      ]\n    },\n
+        \   \"ANG\": {\n      \"title\": \"Angle coefficients file\",\n      \"type\":
+        \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_ANG.txt\",\n
+        \     \"roles\": []\n    },\n    \"MTL\": {\n      \"title\": \"original metadata
+        file\",\n      \"type\": \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_MTL.txt\",\n
+        \     \"roles\": []\n    },\n    \"BQA\": {\n      \"title\": \"Band quality
+        data\",\n      \"type\": \"image/tiff\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/014/033/LC08_L1TP_014033_20180615_20180703_01_T1/LC08_L1TP_014033_20180615_20180703_01_T1_BQA.TIF\",\n
+        \     \"roles\": []\n    }\n  },\n  \"links\": [\n    {\n      \"rel\": \"self\",\n
+        \     \"href\": \"./LC80140332018166LGN00.json\"\n    },\n    {\n      \"rel\":
+        \"parent\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"collection\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"root\",\n      \"href\": \"../../catalog.json\"\n    }\n  ]\n}\n"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '1382'
+      Content-Security-Policy:
+      - default-src 'none'; style-src 'unsafe-inline'; sandbox
+      Content-Type:
+      - text/plain; charset=utf-8
+      Cross-Origin-Resource-Policy:
+      - cross-origin
+      Date:
+      - Tue, 20 Oct 2026 16:40:56 GMT
+      ETag:
+      - W/"4aeda1cb7469bd902a948455e21ccb8b8cec0e530c5f287fa31532aeba8a4b4c"
+      Expires:
+      - Tue, 20 Oct 2026 16:45:56 GMT
+      Source-Age:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Authorization,Accept-Encoding
+      Via:
+      - 1.1 varnish
+      X-Cache:
+      - MISS
+      X-Cache-Hits:
+      - '0'
+      X-Content-Type-Options:
+      - nosniff
+      X-Fastly-Request-ID:
+      - 973f94ca4a92c64b1505979b7ae10e26d0800839
+      X-Frame-Options:
+      - deny
+      X-GitHub-Request-Id:
+      - 2616:113261:11502:17AE4:6AD79997
+      X-Served-By:
+      - cache-den-kden1300022-DEN
+      X-Timer:
+      - S1792514456.477573,VS0,VE118
+      X-XSS-Protection:
+      - 1; mode=block
+      x-github-edge-region:
+      - iad
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://raw.githubusercontent.com/stac-utils/pystac/v1.9.0/docs/example-catalog/landsat-8-l1/2018-05/LC80150322018141LGN00.json
+  response:
+    body:
+      string: "{\n  \"type\": \"Feature\",\n  \"id\": \"LC80150322018141LGN00\",\n
+        \ \"stac_version\" : \"1.0.0\",\n  \"stac_extensions\" : [\n    \"https://stac-extensions.github.io/eo/v1.1.0/schema.json\",\n
+        \   \"https://stac-extensions.github.io/view/v1.0.0/schema.json\",\n    \"https://stac-extensions.github.io/projection/v1.1.0/schema.json\"\n
+        \ ],\n  \"bbox\": [\n    -77.88298,\n    39.23073,\n    -75.07535,\n    41.41022\n
+        \ ],\n  \"geometry\": {\n    \"type\": \"Polygon\",\n    \"coordinates\":
+        [\n      [\n        [\n          -77.28911976020206,\n          41.40912394323429\n
+        \       ],\n        [\n          -75.07576783500748,\n          40.97162247589133\n
+        \       ],\n        [\n          -75.66872631473827,\n          39.23210949585851\n
+        \       ],\n        [\n          -77.87946700654118,\n          39.67679918442899\n
+        \       ],\n        [\n          -77.28911976020206,\n          41.40912394323429\n
+        \       ]\n      ]\n    ]\n  },\n  \"collection\": \"landsat-8-l1\",\n  \"properties\":
+        {\n    \"collection\": \"landsat-8-l1\",\n    \"datetime\": \"2018-05-21T15:44:59Z\",\n
+        \   \"view:sun_azimuth\": 134.8082647,\n    \"view:sun_elevation\": 64.00406717,\n
+        \   \"eo:cloud_cover\": 4,\n    \"instruments\": [\"OLI_TIRS\"],\n    \"view:off_nadir\":
+        0,\n    \"platform\": \"landsat-8\",\n    \"gsd\": 30,\n    \"proj:epsg\":
+        32618,\n    \"proj:transform\": [258885.0, 30.0, 0.0, 4584315.0, 0.0, -30.0],\n
+        \   \"proj:geometry\": {\n      \"type\": \"Polygon\",\n      \"coordinates\":
+        [\n        [\n          [258885.0, 4346085.0],\n          [258885.0, 4584315.0],\n
+        \         [493515.0, 4584315.0],\n          [493515.0, 4346085.0],\n          [258885.0,
+        4346085.0]\n        ]\n      ]\n    },\n    \"proj:shape\": [7821, 7941]\n
+        \ },\n  \"assets\": {\n    \"index\": {\n      \"type\": \"text/html\",\n
+        \     \"title\": \"HTML index page\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/index.html\",\n
+        \     \"roles\": []\n    },\n    \"thumbnail\": {\n      \"title\": \"Thumbnail
+        image\",\n      \"type\": \"image/jpeg\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_thumb_large.jpg\",\n
+        \     \"roles\" : [\n        \"thumbnail\"\n      ]\n    },\n    \"B1\": {\n
+        \     \"type\": \"image/tiff\",\n      \"title\": \"Band 1 (coastal)\",\n
+        \     \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B1.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B1\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 0.44,\n          \"common_name\" : \"coastal\"\n        }\n      ]\n    },\n
+        \   \"B2\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 2
+        (blue)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B2.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B2\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.48,\n          \"common_name\" : \"blue\"\n        }\n      ]\n    },\n
+        \   \"B3\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 3
+        (green)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B3.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B3\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.56,\n          \"common_name\" : \"green\"\n        }\n      ]\n    },\n
+        \   \"B4\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 4
+        (red)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B4.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B4\",\n          \"full_width_half_max\" : 0.04,\n          \"center_wavelength\"
+        : 0.65,\n          \"common_name\" : \"red\"\n        }\n      ]\n    },\n
+        \   \"B5\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 5
+        (nir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B5.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B5\",\n          \"full_width_half_max\" : 0.03,\n          \"center_wavelength\"
+        : 0.86,\n          \"common_name\" : \"nir\"\n        }\n      ]\n    },\n
+        \   \"B6\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 6
+        (swir16)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B6.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B6\",\n          \"full_width_half_max\" : 0.08,\n          \"center_wavelength\"
+        : 1.6,\n          \"common_name\" : \"swir16\"\n        }\n      ]\n    },\n
+        \   \"B7\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 7
+        (swir22)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B7.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B7\",\n          \"full_width_half_max\" : 0.22,\n          \"center_wavelength\"
+        : 2.2,\n          \"common_name\" : \"swir22\"\n        }\n      ]\n    },\n
+        \   \"B8\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 8
+        (pan)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B8.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B8\",\n          \"full_width_half_max\" : 0.18,\n          \"center_wavelength\"
+        : 0.59,\n          \"common_name\" : \"pan\"\n        }\n      ]\n    },\n
+        \   \"B9\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 9
+        (cirrus)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B9.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B9\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 1.37,\n          \"common_name\" : \"cirrus\"\n        }\n      ]\n    },\n
+        \   \"B10\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 10
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B10.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B10\",\n          \"full_width_half_max\" : 0.8,\n          \"center_wavelength\"
+        : 10.9,\n          \"common_name\" : \"lwir11\"\n        }\n      ]\n    },\n
+        \   \"B11\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 11
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_B11.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B11\",\n          \"full_width_half_max\" : 1,\n          \"center_wavelength\"
+        : 12,\n          \"common_name\" : \"lwir2\"\n        }\n      ]\n    },\n
+        \   \"ANG\": {\n      \"title\": \"Angle coefficients file\",\n      \"type\":
+        \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_ANG.txt\",\n
+        \     \"roles\": []\n    },\n    \"MTL\": {\n      \"title\": \"original metadata
+        file\",\n      \"type\": \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_MTL.txt\",\n
+        \     \"roles\": []\n    },\n    \"BQA\": {\n      \"title\": \"Band quality
+        data\",\n      \"type\": \"image/tiff\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/032/LC08_L1TP_015032_20180521_20180605_01_T1/LC08_L1TP_015032_20180521_20180605_01_T1_BQA.TIF\",\n
+        \     \"roles\": []\n    }\n  },\n  \"links\": [\n    {\n      \"rel\": \"self\",\n
+        \     \"href\": \"./LC80150322018141LGN00.json\"\n    },\n    {\n      \"rel\":
+        \"parent\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"collection\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"root\",\n      \"href\": \"../../catalog.json\"\n    }\n  ]\n}\n"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '1380'
+      Content-Security-Policy:
+      - default-src 'none'; style-src 'unsafe-inline'; sandbox
+      Content-Type:
+      - text/plain; charset=utf-8
+      Cross-Origin-Resource-Policy:
+      - cross-origin
+      Date:
+      - Tue, 20 Oct 2026 16:40:56 GMT
+      ETag:
+      - W/"cd518c56745214a4d20ae145f9fb6edf689b57fc9ac77e1d3592c1476949550f"
+      Expires:
+      - Tue, 20 Oct 2026 16:45:56 GMT
+      Source-Age:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Authorization,Accept-Encoding
+      Via:
+      - 1.1 varnish
+      X-Cache:
+      - MISS
+      X-Cache-Hits:
+      - '0'
+      X-Content-Type-Options:
+      - nosniff
+      X-Fastly-Request-ID:
+      - 4212741374534863c0c3d6bf28ed7869838387bb
+      X-Frame-Options:
+      - deny
+      X-GitHub-Request-Id:
+      - 8CE4:303994:FD1B:16205:6AD79998
+      X-Served-By:
+      - cache-den-kden1300046-DEN
+      X-Timer:
+      - S1792514457.644159,VS0,VE113
+      X-XSS-Protection:
+      - 1; mode=block
+      x-github-edge-region:
+      - iad
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://raw.githubusercontent.com/stac-utils/pystac/v1.9.0/docs/example-catalog/landsat-8-l1/2018-07/LC80150332018189LGN00.json
+  response:
+    body:
+      string: "{\n  \"type\": \"Feature\",\n  \"id\": \"LC80150332018189LGN00\",\n
+        \ \"stac_version\" : \"1.0.0\",\n  \"stac_extensions\" : [\n    \"https://stac-extensions.github.io/eo/v1.1.0/schema.json\",\n
+        \   \"https://stac-extensions.github.io/view/v1.0.0/schema.json\",\n    \"https://stac-extensions.github.io/projection/v1.1.0/schema.json\"\n
+        \ ],\n  \"bbox\": [\n    -78.25028,\n    37.79719,\n    -75.48983,\n    39.98757\n
+        \ ],\n  \"geometry\": {\n    \"type\": \"Polygon\",\n    \"coordinates\":
+        [\n      [\n        [\n          -77.66532657556414,\n          39.987421383364385\n
+        \       ],\n        [\n          -75.49021499188945,\n          39.54442448711656\n
+        \       ],\n        [\n          -76.07747288135147,\n          37.799167045362736\n
+        \       ],\n        [\n          -78.25025639728777,\n          38.24897728816149\n
+        \       ],\n        [\n          -77.66532657556414,\n          39.987421383364385\n
+        \       ]\n      ]\n    ]\n  },\n  \"collection\": \"landsat-8-l1\",\n  \"properties\":
+        {\n    \"collection\": \"landsat-8-l1\",\n    \"datetime\": \"2018-07-08T15:45:34Z\",\n
+        \   \"view:sun_azimuth\": 125.31095515,\n    \"view:sun_elevation\": 65.2014335,\n
+        \   \"eo:cloud_cover\": 0,\n    \"instruments\": [\"OLI_TIRS\"],\n    \"view:off_nadir\":
+        0,\n    \"platform\": \"landsat-8\",\n    \"gsd\": 30,\n    \"proj:epsg\":
+        32618,\n    \"proj:transform\": [222285.0, 30.0, 0.0, 4426515.0, 0.0, -30.0],\n
+        \   \"proj:geometry\": {\n      \"type\": \"Polygon\",\n      \"coordinates\":
+        [\n        [\n          [222285.0, 4187985.0],\n          [222285.0, 4426515.0],\n
+        \         [456915.0, 4426515.0],\n          [456915.0, 4187985.0],\n          [222285.0,4187985.0]]\n
+        \     ]\n    },\n    \"proj:shape\": [7821, 7951]\n  },\n  \"assets\": {\n
+        \   \"index\": {\n      \"type\": \"text/html\",\n      \"title\": \"HTML
+        index page\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/index.html\",\n
+        \     \"roles\": []\n    },\n    \"thumbnail\": {\n      \"title\": \"Thumbnail
+        image\",\n      \"type\": \"image/jpeg\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_thumb_large.jpg\",\n
+        \     \"roles\" : [\n        \"thumbnail\"\n      ]\n    },\n    \"B1\": {\n
+        \     \"type\": \"image/tiff\",\n      \"title\": \"Band 1 (coastal)\",\n
+        \     \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B1.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B1\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 0.44,\n          \"common_name\" : \"coastal\"\n        }\n      ]\n    },\n
+        \   \"B2\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 2
+        (blue)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B2.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B2\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.48,\n          \"common_name\" : \"blue\"\n        }\n      ]\n    },\n
+        \   \"B3\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 3
+        (green)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B3.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B3\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.56,\n          \"common_name\" : \"green\"\n        }\n      ]\n    },\n
+        \   \"B4\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 4
+        (red)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B4.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B4\",\n          \"full_width_half_max\" : 0.04,\n          \"center_wavelength\"
+        : 0.65,\n          \"common_name\" : \"red\"\n        }\n      ]\n    },\n
+        \   \"B5\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 5
+        (nir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B5.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B5\",\n          \"full_width_half_max\" : 0.03,\n          \"center_wavelength\"
+        : 0.86,\n          \"common_name\" : \"nir\"\n        }\n      ]\n    },\n
+        \   \"B6\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 6
+        (swir16)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B6.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B6\",\n          \"full_width_half_max\" : 0.08,\n          \"center_wavelength\"
+        : 1.6,\n          \"common_name\" : \"swir16\"\n        }\n      ]\n    },\n
+        \   \"B7\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 7
+        (swir22)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B7.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B7\",\n          \"full_width_half_max\" : 0.22,\n          \"center_wavelength\"
+        : 2.2,\n          \"common_name\" : \"swir22\"\n        }\n      ]\n    },\n
+        \   \"B8\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 8
+        (pan)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B8.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B8\",\n          \"full_width_half_max\" : 0.18,\n          \"center_wavelength\"
+        : 0.59,\n          \"common_name\" : \"pan\"\n        }\n      ]\n    },\n
+        \   \"B9\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 9
+        (cirrus)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B9.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B9\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 1.37,\n          \"common_name\" : \"cirrus\"\n        }\n      ]\n    },\n
+        \   \"B10\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 10
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B10.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B10\",\n          \"full_width_half_max\" : 0.8,\n          \"center_wavelength\"
+        : 10.9,\n          \"common_name\" : \"lwir11\"\n        }\n      ]\n    },\n
+        \   \"B11\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 11
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_B11.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B11\",\n          \"full_width_half_max\" : 1,\n          \"center_wavelength\"
+        : 12,\n          \"common_name\" : \"lwir2\"\n        }\n      ]\n    },\n
+        \   \"ANG\": {\n      \"title\": \"Angle coefficients file\",\n      \"type\":
+        \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_ANG.txt\",\n
+        \     \"roles\": []\n    },\n    \"MTL\": {\n      \"title\": \"original metadata
+        file\",\n      \"type\": \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_MTL.txt\",\n
+        \     \"roles\": []\n    },\n    \"BQA\": {\n      \"title\": \"Band quality
+        data\",\n      \"type\": \"image/tiff\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/015/033/LC08_L1TP_015033_20180708_20180717_01_T1/LC08_L1TP_015033_20180708_20180717_01_T1_BQA.TIF\",\n
+        \     \"roles\": []\n    }\n  },\n  \"links\": [\n    {\n      \"rel\": \"self\",\n
+        \     \"href\": \"./LC80150332018189LGN00.json\"\n    },\n    {\n      \"rel\":
+        \"parent\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"collection\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"root\",\n      \"href\": \"../../catalog.json\"\n    }\n  ]\n}\n"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '1375'
+      Content-Security-Policy:
+      - default-src 'none'; style-src 'unsafe-inline'; sandbox
+      Content-Type:
+      - text/plain; charset=utf-8
+      Cross-Origin-Resource-Policy:
+      - cross-origin
+      Date:
+      - Tue, 20 Oct 2026 16:40:56 GMT
+      ETag:
+      - W/"f1956bfe0994b5049095141c760f2d24f565019a6e81e1aec1816740157df998"
+      Expires:
+      - Tue, 20 Oct 2026 16:45:56 GMT
+      Source-Age:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Authorization,Accept-Encoding
+      Via:
+      - 1.1 varnish
+      X-Cache:
+      - MISS
+      X-Cache-Hits:
+      - '0'
+      X-Content-Type-Options:
+      - nosniff
+      X-Fastly-Request-ID:
+      - c558375fec0b0cf356d8a93670d6b03a88707ece
+      X-Frame-Options:
+      - deny
+      X-GitHub-Request-Id:
+      - 4892:3990D0:11D33:182FE:6AD79996
+      X-Served-By:
+      - cache-den-kden1300076-DEN
+      X-Timer:
+      - S1792514457.805998,VS0,VE120
+      X-XSS-Protection:
+      - 1; mode=block
+      x-github-edge-region:
+      - iad
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://raw.githubusercontent.com/stac-utils/pystac/v1.9.0/docs/example-catalog/landsat-8-l1/2018-06/LC80300332018166LGN00.json
+  response:
+    body:
+      string: "{\n  \"type\": \"Feature\",\n  \"stac_version\" : \"1.0.0\",\n  \"stac_extensions\"
+        : [\n    \"https://stac-extensions.github.io/eo/v1.1.0/schema.json\",\n    \"https://stac-extensions.github.io/view/v1.0.0/schema.json\",\n
+        \   \"https://stac-extensions.github.io/projection/v1.1.0/schema.json\"\n
+        \ ],\n  \"id\": \"LC80300332018166LGN00\",\n  \"bbox\": [\n    -101.40793,\n
+        \   37.81084,\n    -98.6721,\n    39.97469\n  ],\n  \"geometry\": {\n    \"type\":
+        \"Polygon\",\n    \"coordinates\": [\n      [\n        [\n          -100.84368079413701,\n
+        \         39.97210491033466\n        ],\n        [\n          -98.67492641719046,\n
+        \         39.54833037653145\n        ],\n        [\n          -99.23946071016417,\n
+        \         37.81370881408165\n        ],\n        [\n          -101.40560438472555,\n
+        \         38.24476872678675\n        ],\n        [\n          -100.84368079413701,\n
+        \         39.97210491033466\n        ]\n      ]\n    ]\n  },\n  \"collection\":
+        \"landsat-8-l1\",\n  \"properties\": {\n    \"collection\": \"landsat-8-l1\",\n
+        \   \"datetime\": \"2018-06-15T17:18:03Z\",\n    \"view:sun_azimuth\": 125.5799919,\n
+        \   \"view:sun_elevation\": 66.54407242,\n    \"eo:cloud_cover\": 0,\n    \"instruments\":
+        [\"OLI_TIRS\"],\n    \"view:off_nadir\": 0,\n    \"platform\": \"landsat-8\",\n
+        \   \"gsd\": 30,\n    \"proj:epsg\": 32614,\n    \"proj:transform\": [294285.0,
+        30.0, 0.0, 4425015.0, 0.0, -30],\n    \"proj:geometry\": {\n      \"type\":
+        \"Polygon\",\n      \"coordinates\": [\n        [\n          [294285.0, 4187385.0],\n
+        \         [294285.0, 4425015.0],\n          [528015.0, 4425015.0],\n          [528015.0,
+        4187385.0],\n          [294285.0, 4187385.0]\n        ]\n      ]\n    },\n
+        \   \"proj:shape\": [7791, 7921]\n  },\n  \"assets\": {\n    \"index\": {\n
+        \     \"type\": \"text/html\",\n      \"title\": \"HTML index page\",\n      \"href\":
+        \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/index.html\",\n
+        \     \"roles\" : []\n    },\n    \"thumbnail\": {\n      \"title\": \"Thumbnail
+        image\",\n      \"type\": \"image/jpeg\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_thumb_large.jpg\",\n
+        \     \"roles\" : [\n        \"thumbnail\"\n      ]\n    },\n    \"B1\": {\n
+        \     \"type\": \"image/tiff\",\n      \"title\": \"Band 1 (coastal)\",\n
+        \     \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B1.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B1\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 0.44,\n          \"common_name\" : \"coastal\"\n        }\n      ]\n    },\n
+        \   \"B2\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 2
+        (blue)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B2.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B2\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.48,\n          \"common_name\" : \"blue\"\n        }\n      ]\n    },\n
+        \   \"B3\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 3
+        (green)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B3.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B3\",\n          \"full_width_half_max\" : 0.06,\n          \"center_wavelength\"
+        : 0.56,\n          \"common_name\" : \"green\"\n        }\n      ]\n    },\n
+        \   \"B4\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 4
+        (red)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B4.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B4\",\n          \"full_width_half_max\" : 0.04,\n          \"center_wavelength\"
+        : 0.65,\n          \"common_name\" : \"red\"\n        }\n      ]\n    },\n
+        \   \"B5\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 5
+        (nir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B5.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B5\",\n          \"full_width_half_max\" : 0.03,\n          \"center_wavelength\"
+        : 0.86,\n          \"common_name\" : \"nir\"\n        }\n      ]\n    },\n
+        \   \"B6\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 6
+        (swir16)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B6.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B6\",\n          \"full_width_half_max\" : 0.08,\n          \"center_wavelength\"
+        : 1.6,\n          \"common_name\" : \"swir16\"\n        }\n      ]\n    },\n
+        \   \"B7\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 7
+        (swir22)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B7.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B7\",\n          \"full_width_half_max\" : 0.22,\n          \"center_wavelength\"
+        : 2.2,\n          \"common_name\" : \"swir22\"\n        }\n      ]\n    },\n
+        \   \"B8\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 8
+        (pan)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B8.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B8\",\n          \"full_width_half_max\" : 0.18,\n          \"center_wavelength\"
+        : 0.59,\n          \"common_name\" : \"pan\"\n        }\n      ]\n    },\n
+        \   \"B9\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 9
+        (cirrus)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B9.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B9\",\n          \"full_width_half_max\" : 0.02,\n          \"center_wavelength\"
+        : 1.37,\n          \"common_name\" : \"cirrus\"\n        }\n      ]\n    },\n
+        \   \"B10\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 10
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B10.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B10\",\n          \"full_width_half_max\" : 0.8,\n          \"center_wavelength\"
+        : 10.9,\n          \"common_name\" : \"lwir11\"\n        }\n      ]\n    },\n
+        \   \"B11\": {\n      \"type\": \"image/tiff\",\n      \"title\": \"Band 11
+        (lwir)\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_B11.TIF\",\n
+        \     \"roles\": [],\n      \"eo:bands\": [\n        {\n          \"name\"
+        : \"B11\",\n          \"full_width_half_max\" : 1,\n          \"center_wavelength\"
+        : 12,\n          \"common_name\" : \"lwir2\"\n        }\n      ]\n    },\n
+        \   \"ANG\": {\n      \"title\": \"Angle coefficients file\",\n      \"type\":
+        \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_ANG.txt\",\n
+        \     \"roles\": []\n    },\n    \"MTL\": {\n      \"title\": \"original metadata
+        file\",\n      \"type\": \"text/plain\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_MTL.txt\",\n
+        \     \"roles\": []\n    },\n    \"BQA\": {\n      \"title\": \"Band quality
+        data\",\n      \"type\": \"image/tiff\",\n      \"href\": \"https://s3-us-west-2.amazonaws.com/landsat-pds/c1/L8/030/033/LC08_L1TP_030033_20180615_20180703_01_T1/LC08_L1TP_030033_20180615_20180703_01_T1_BQA.TIF\",\n
+        \     \"roles\": []\n    }\n  },\n  \"links\": [\n    {\n      \"rel\": \"self\",\n
+        \     \"href\": \"./LC80300332018166LGN00.json\"\n    },\n    {\n      \"rel\":
+        \"parent\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"collection\",\n      \"href\": \"../collection.json\"\n    },\n    {\n      \"rel\":
+        \"root\",\n      \"href\": \"../../catalog.json\"\n    }\n  ]\n}\n"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '1384'
+      Content-Security-Policy:
+      - default-src 'none'; style-src 'unsafe-inline'; sandbox
+      Content-Type:
+      - text/plain; charset=utf-8
+      Cross-Origin-Resource-Policy:
+      - cross-origin
+      Date:
+      - Tue, 20 Oct 2026 16:40:57 GMT
+      ETag:
+      - W/"6da3b66dc885889ceff60c1a0618fcc959b22734a7a4d9646fe0f55f0869ca5f"
+      Expires:
+      - Tue, 20 Oct 2026 16:45:57 GMT
+      Source-Age:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Authorization,Accept-Encoding
+      Via:
+      - 1.1 varnish
+      X-Cache:
+      - MISS
+      X-Cache-Hits:
+      - '0'
+      X-Content-Type-Options:
+      - nosniff
+      X-Fastly-Request-ID:
+      - ef44243713f2f123e0cc2311775af1f93b1d0cab
+      X-Frame-Options:
+      - deny
+      X-GitHub-Request-Id:
+      - 2616:113261:1151F:17B0C:6AD79998
+      X-Served-By:
+      - cache-den-kden1300084-DEN
+      X-Timer:
+      - S1792514457.975715,VS0,VE113
+      X-XSS-Protection:
+      - 1; mode=block
+      x-github-edge-region:
+      - iad
+    status:
+      code: 200
+      message: OK
+version: 1

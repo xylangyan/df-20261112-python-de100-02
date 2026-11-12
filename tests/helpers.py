@@ -1,0 +1,21 @@
+import json
+from pathlib import Path
+from typing import Any
+
+TEST_DATA = Path(__file__).parent / "data"
+
+STAC_URLS = {
+    "PLANETARY-COMPUTER": "https://planetarycomputer.microsoft.com/api/stac/v1",
+    "EARTH-SEARCH": "https://earth-search.aws.element84.com/v1",
+    "MLHUB": "https://api.radiant.earth/mlhub/v1",
+    "SPACEBEL": "https://emc.spacebel.be",
+}
+
+
+def read_data_file(file_name: str, mode: str = "r", parse_json: bool = False) -> Any:
+    file_path = TEST_DATA / file_name
+    with file_path.open(mode=mode) as src:
+        if parse_json:
+            return json.load(src)
+        else:
+            return src.read()

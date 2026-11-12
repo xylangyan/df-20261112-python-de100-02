@@ -1,0 +1,114 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.3
+    method: GET
+    uri: https://stac.sage.uvt.ro/
+  response:
+    body:
+      string: "{\"type\":\"Catalog\",\"id\":\"stac-fastapi\",\"title\":\"stac-fastapi\",\"description\":\"stac-fastapi\",\"stac_version\":\"1.0.0\",\"conformsTo\":[\"http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter\",\"http://www.opengis.net/spec/cql2/1.0/conf/cql2-json\",\"http://www.opengis.net/spec/cql2/1.0/conf/cql2-text\",\"https://api.stacspec.org/v1.0.0/item-search#fields\",\"https://api.stacspec.org/v1.0.0/item-search#sort\",\"https://api.stacspec.org/v1.0.0/item-search\",\"http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson\",\"https://api.stacspec.org/v1.0.0/collections\",\"http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2\",\"https://api.stacspec.org/v1.0.0/core\",\"https://api.stacspec.org/v1.0.0-rc.2/item-search#filter\",\"http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core\",\"https://api.stacspec.org/v1.0.0/item-search#query\",\"https://api.stacspec.org/v1.0.0/ogcapi-features\",\"http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30\",\"http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter\"],\"links\":[{\"rel\":\"self\",\"type\":\"application/json\",\"href\":\"https://stac.sage.uvt.ro/\"},{\"rel\":\"root\",\"type\":\"application/json\",\"href\":\"https://stac.sage.uvt.ro/\"},{\"rel\":\"data\",\"type\":\"application/json\",\"href\":\"https://stac.sage.uvt.ro/collections\"},{\"rel\":\"conformance\",\"type\":\"application/json\",\"title\":\"STAC/OGC
+        conformance classes implemented by this server\",\"href\":\"https://stac.sage.uvt.ro/conformance\"},{\"rel\":\"search\",\"type\":\"application/geo+json\",\"title\":\"STAC
+        search\",\"href\":\"https://stac.sage.uvt.ro/search\",\"method\":\"GET\"},{\"rel\":\"search\",\"type\":\"application/geo+json\",\"title\":\"STAC
+        search\",\"href\":\"https://stac.sage.uvt.ro/search\",\"method\":\"POST\"},{\"rel\":\"http://www.opengis.net/def/rel/ogc/1.0/queryables\",\"type\":\"application/schema+json\",\"title\":\"Queryables\",\"href\":\"https://stac.sage.uvt.ro/queryables\",\"method\":\"GET\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Copernicus
+        DEM 30m\",\"href\":\"https://stac.sage.uvt.ro/collections/copernicus-dem-30\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Sentinel-2
+        Level-1C - Rom\xE2nia\",\"href\":\"https://stac.sage.uvt.ro/collections/sentinel-2-l1c\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Sentinel-2
+        Level-1C - Rom\xE2nia - Vegetation Index\",\"href\":\"https://stac.sage.uvt.ro/collections/sentinel-2-l1c-ndvi\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"ANCPI
+        MNT - Rom\xE2nia County Level - Numerical Terrain Model\",\"href\":\"https://stac.sage.uvt.ro/collections/ancpi-judete-mnt\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Sentinel
+        1 Level-1 Ground Range Detected (GRD)\",\"href\":\"https://stac.sage.uvt.ro/collections/sentinel-1-grd\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Corine
+        Land Cover 2018 (Vectorial)\",\"href\":\"https://stac.sage.uvt.ro/collections/clc-2018-20-vector\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Corine
+        Land Cover 2018 (Raster)\",\"href\":\"https://stac.sage.uvt.ro/collections/clc-2018-20\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Sentinel
+        1 Radiometrically Terrain Corrected (RTC)\",\"href\":\"https://stac.sage.uvt.ro/collections/sentinel-1-rtc\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"MAJA
+        CAMS Products\",\"href\":\"https://stac.sage.uvt.ro/collections/maja-cams\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"Sentinel-2
+        Level-2A MAJA - Rom\xE2nia\",\"href\":\"https://stac.sage.uvt.ro/collections/sentinel-2-l2a-maja\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"ESA
+        WorldCover 2020\",\"href\":\"https://stac.sage.uvt.ro/collections/esa-worldcover-2020\"},{\"rel\":\"child\",\"type\":\"application/json\",\"title\":\"ESA
+        WorldCover 2021\",\"href\":\"https://stac.sage.uvt.ro/collections/esa-worldcover-2021\"},{\"rel\":\"service-desc\",\"type\":\"application/vnd.oai.openapi+json;version=3.0\",\"title\":\"OpenAPI
+        service description\",\"href\":\"https://stac.sage.uvt.ro/api\"},{\"rel\":\"service-doc\",\"type\":\"text/html\",\"title\":\"OpenAPI
+        service documentation\",\"href\":\"https://stac.sage.uvt.ro/api.html\"}],\"stac_extensions\":[]}"
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization
+      Access-Control-Allow-Methods:
+      - PUT, GET, POST, OPTIONS
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - '*, X-CustomResponseHeader'
+      Access-Control-Max-Age:
+      - '1728000'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '896'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jul 2025 12:50:26 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      content-encoding:
+      - gzip
+      vary:
+      - Accept-Encoding
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.3
+    method: GET
+    uri: https://stac.sage.uvt.ro/queryables
+  response:
+    body:
+      string: '{"$id":"https://stac.sage.uvt.ro/queryables","type":"object","title":"STAC
+        Queryables.","$schema":"http://json-schema.org/draft-07/schema#","properties":{"id":{"$ref":"https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/definitions/core/allOf/2/properties/id","title":"Item
+        ID","description":"Item identifier"},"datetime":{"type":"string","title":"Acquired","format":"date-time","pattern":"(\\+00:00|Z)$","description":"Datetime"},"geometry":{"$ref":"https://geojson.org/schema/Feature.json","title":"Item
+        Geometry","description":"Item Geometry"},"platform":{"type":"string"},"proj:bbox":{"type":"array"},"proj:epsg":{"type":"number"},"proj:shape":{"type":"array"},"instruments":{"type":"array"},"s2:mgrs_tile":{"type":"string"},"constellation":{"type":"string"},"proj:geometry":{"type":"object"},"proj:projjson":{"type":"object"},"s2:granule_id":{"type":"string"},"eo:cloud_cover":{"$ref":"https://stac-extensions.github.io/eo/v1.0.0/schema.json#/definitions/fieldsproperties/eo:cloud_cover"},"proj:transform":{"type":"array"},"s2:datatake_id":{"type":"string"},"s2:product_uri":{"type":"string"},"s2:datastrip_id":{"type":"string"},"s2:product_type":{"type":"string"},"sat:orbit_state":{"type":"string"},"s2:datatake_type":{"type":"string"},"s2:generation_time":{"type":"string"},"sat:relative_orbit":{"type":"number"},"eocubero:snow_cover":{"type":"number"},"s2:mean_solar_zenith":{"type":"number"},"s2:mean_solar_azimuth":{"type":"number"},"eocubero:rain-detected":{"type":"boolean"},"s2:processing_baseline":{"type":"string"},"s2:snow_ice_percentage":{"type":"number"},"eocubero:s2-source-item":{"type":"string"},"eocubero:hotspot-detected":{"type":"boolean"},"eocubero:sun-glint-detected":{"type":"boolean"},"s2:degraded_msi_data_percentage":{"type":"number"}},"additionalProperties":true}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization
+      Access-Control-Allow-Methods:
+      - PUT, GET, POST, OPTIONS
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - '*, X-CustomResponseHeader'
+      Access-Control-Max-Age:
+      - '1728000'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '674'
+      Content-Type:
+      - application/schema+json
+      Date:
+      - Thu, 17 Jul 2025 12:50:26 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      content-encoding:
+      - gzip
+      vary:
+      - Accept-Encoding
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,0 +1,344 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://planetarycomputer.microsoft.com/api/stac/v1
+  response:
+    body:
+      string: '{"conformsTo":["http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2","http://www.opengis.net/spec/cql2/1.0/conf/cql2-json","http://www.opengis.net/spec/cql2/1.0/conf/cql2-text","http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core","http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson","http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30","http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter","https://api.stacspec.org/v1.0.0-rc.2/item-search#filter","https://api.stacspec.org/v1.0.0/collections","https://api.stacspec.org/v1.0.0/core","https://api.stacspec.org/v1.0.0/item-search","https://api.stacspec.org/v1.0.0/item-search#fields","https://api.stacspec.org/v1.0.0/item-search#query","https://api.stacspec.org/v1.0.0/item-search#sort","https://api.stacspec.org/v1.0.0/ogcapi-features"],"type":"Catalog","stac_version":"1.0.0","id":"microsoft-pc","title":"Microsoft
+        Planetary Computer STAC API","description":"Searchable spatiotemporal metadata
+        describing Earth science datasets hosted by the Microsoft Planetary Computer","stac_extensions":[],"links":[{"rel":"self","href":"https://planetarycomputer.microsoft.com/api/stac/v1/","type":"application/json"},{"rel":"root","href":"https://planetarycomputer.microsoft.com/api/stac/v1/","type":"application/json"},{"rel":"data","href":"https://planetarycomputer.microsoft.com/api/stac/v1/collections","type":"application/json"},{"rel":"conformance","href":"https://planetarycomputer.microsoft.com/api/stac/v1/conformance","type":"application/json","title":"STAC/OGC
+        conformance classes implemented by this server"},{"rel":"search","href":"https://planetarycomputer.microsoft.com/api/stac/v1/search","method":"GET","type":"application/geo+json","title":"STAC
+        search"},{"rel":"search","href":"https://planetarycomputer.microsoft.com/api/stac/v1/search","method":"POST","type":"application/geo+json","title":"STAC
+        search"},{"rel":"http://www.opengis.net/def/rel/ogc/1.0/queryables","href":"https://planetarycomputer.microsoft.com/api/stac/v1/queryables","method":"GET","type":"application/schema+json","title":"Queryables
+        available for this Catalog"}]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 20 Oct 2026 16:47:53 GMT
+      Transfer-Encoding:
+      - chunked
+      X-Cache:
+      - CONFIG_NOCACHE
+      cache-control:
+      - no-store
+      x-azure-ref:
+      - 20261020T164753Z-16c875867dcmrspvhC1CYSpt1n0000001w4g0000000053rg
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://planetarycomputer.microsoft.com/api/stac/v1/
+  response:
+    body:
+      string: '{"conformsTo":["http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2","http://www.opengis.net/spec/cql2/1.0/conf/cql2-json","http://www.opengis.net/spec/cql2/1.0/conf/cql2-text","http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core","http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson","http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30","http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter","https://api.stacspec.org/v1.0.0-rc.2/item-search#filter","https://api.stacspec.org/v1.0.0/collections","https://api.stacspec.org/v1.0.0/core","https://api.stacspec.org/v1.0.0/item-search","https://api.stacspec.org/v1.0.0/item-search#fields","https://api.stacspec.org/v1.0.0/item-search#query","https://api.stacspec.org/v1.0.0/item-search#sort","https://api.stacspec.org/v1.0.0/ogcapi-features"],"type":"Catalog","stac_version":"1.0.0","id":"microsoft-pc","title":"Microsoft
+        Planetary Computer STAC API","description":"Searchable spatiotemporal metadata
+        describing Earth science datasets hosted by the Microsoft Planetary Computer","stac_extensions":[],"links":[{"rel":"self","href":"https://planetarycomputer.microsoft.com/api/stac/v1/","type":"application/json"},{"rel":"root","href":"https://planetarycomputer.microsoft.com/api/stac/v1/","type":"application/json"},{"rel":"data","href":"https://planetarycomputer.microsoft.com/api/stac/v1/collections","type":"application/json"},{"rel":"conformance","href":"https://planetarycomputer.microsoft.com/api/stac/v1/conformance","type":"application/json","title":"STAC/OGC
+        conformance classes implemented by this server"},{"rel":"search","href":"https://planetarycomputer.microsoft.com/api/stac/v1/search","method":"GET","type":"application/geo+json","title":"STAC
+        search"},{"rel":"search","href":"https://planetarycomputer.microsoft.com/api/stac/v1/search","method":"POST","type":"application/geo+json","title":"STAC
+        search"},{"rel":"http://www.opengis.net/def/rel/ogc/1.0/queryables","href":"https://planetarycomputer.microsoft.com/api/stac/v1/queryables","method":"GET","type":"application/schema+json","title":"Queryables
+        available for this Catalog"}]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 20 Oct 2026 16:47:54 GMT
+      Transfer-Encoding:
+      - chunked
+      X-Cache:
+      - CONFIG_NOCACHE
+      cache-control:
+      - no-store
+      x-azure-ref:
+      - 20261020T164753Z-16c875867dc9lp7jhC1CYSbp840000001vug00000000eeg7
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2
+  response:
+    body:
+      string: '{"id":"landsat-c2-l2","type":"Collection","links":[{"rel":"items","type":"application/geo\u002Bjson","href":"https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/items"},{"rel":"parent","type":"application/json","href":"https://planetarycomputer.microsoft.com/api/stac/v1/"},{"rel":"root","type":"application/json","href":"https://planetarycomputer.microsoft.com/api/stac/v1/"},{"rel":"self","type":"application/json","href":"https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2"},{"rel":"cite-as","href":"https://doi.org/10.5066/P9IAXOVV","title":"Landsat
+        4-5 TM Collection 2 Level-2"},{"rel":"cite-as","href":"https://doi.org/10.5066/P9C7I13B","title":"Landsat
+        7 ETM\u002B Collection 2 Level-2"},{"rel":"cite-as","href":"https://doi.org/10.5066/P9OGBGM6","title":"Landsat
+        8-9 OLI/TIRS Collection 2 Level-2"},{"rel":"license","href":"https://www.usgs.gov/core-science-systems/hdds/data-policy","title":"Public
+        Domain"},{"rel":"describedby","href":"https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2","type":"text/html","title":"Human
+        readable dataset overview and reference"},{"rel":"http://www.opengis.net/def/rel/ogc/1.0/queryables","type":"application/schema\u002Bjson","title":"Queryables","href":"https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/queryables"},{"rel":"describedby","href":"https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2","title":"Human
+        readable dataset overview and reference","type":"text/html"}],"title":"Landsat
+        Collection 2 Level-2","assets":{"thumbnail":{"href":"https://ai4edatasetspublicassets.blob.core.windows.net/assets/pc_thumbnails/landsat-c2-l2-thumb.png","type":"image/png","roles":["thumbnail"],"title":"Landsat
+        Collection 2 Level-2 thumbnail"},"geoparquet-items":{"href":"abfs://items/landsat-c2-l2.parquet","type":"application/x-parquet","roles":["stac-items"],"title":"GeoParquet
+        STAC items","description":"Snapshot of the collection\u0027s STAC items exported
+        to GeoParquet format.","msft:partition_info":{"is_partitioned":true,"partition_frequency":"MS"},"table:storage_options":{"account_name":"pcstacitems"}}},"extent":{"spatial":{"bbox":[[-180,-90,180,90]]},"temporal":{"interval":[["1982-08-22T00:00:00Z",null]]}},"license":"proprietary","keywords":["Landsat","USGS","NASA","Satellite","Global","Imagery","Reflectance","Temperature"],"providers":[{"url":"https://landsat.gsfc.nasa.gov/","name":"NASA","roles":["producer","licensor"]},{"url":"https://www.usgs.gov/landsat-missions/landsat-collection-2-level-2-science-products","name":"USGS","roles":["producer","processor","licensor"]},{"url":"https://planetarycomputer.microsoft.com","name":"Microsoft","roles":["host"]}],"summaries":{"gsd":[30,60,100,120],"sci:doi":["10.5066/P9IAXOVV","10.5066/P9C7I13B","10.5066/P9OGBGM6"],"eo:bands":[{"name":"TM_B1","common_name":"blue","description":"Visible
+        blue (Thematic Mapper)","center_wavelength":0.49,"full_width_half_max":0.07},{"name":"TM_B2","common_name":"green","description":"Visible
+        green (Thematic Mapper)","center_wavelength":0.56,"full_width_half_max":0.08},{"name":"TM_B3","common_name":"red","description":"Visible
+        red (Thematic Mapper)","center_wavelength":0.66,"full_width_half_max":0.06},{"name":"TM_B4","common_name":"nir08","description":"Near
+        infrared (Thematic Mapper)","center_wavelength":0.83,"full_width_half_max":0.14},{"name":"TM_B5","common_name":"swir16","description":"Short-wave
+        infrared (Thematic Mapper)","center_wavelength":1.65,"full_width_half_max":0.2},{"name":"TM_B6","common_name":"lwir","description":"Long-wave
+        infrared (Thematic Mapper)","center_wavelength":11.45,"full_width_half_max":2.1},{"name":"TM_B7","common_name":"swir22","description":"Short-wave
+        infrared (Thematic Mapper)","center_wavelength":2.22,"full_width_half_max":0.27},{"name":"ETM_B1","common_name":"blue","description":"Visible
+        blue (Enhanced Thematic Mapper Plus)","center_wavelength":0.48,"full_width_half_max":0.07},{"name":"ETM_B2","common_name":"green","description":"Visible
+        green (Enhanced Thematic Mapper Plus)","center_wavelength":0.56,"full_width_half_max":0.08},{"name":"ETM_B3","common_name":"red","description":"Visible
+        red (Enhanced Thematic Mapper Plus)","center_wavelength":0.66,"full_width_half_max":0.06},{"name":"ETM_B4","common_name":"nir08","description":"Near
+        infrared (Enhanced Thematic Mapper Plus)","center_wavelength":0.84,"full_width_half_max":0.13},{"name":"ETM_B5","common_name":"swir16","description":"Short-wave
+        infrared (Enhanced Thematic Mapper Plus)","center_wavelength":1.65,"full_width_half_max":0.2},{"name":"ETM_B6","common_name":"lwir","description":"Long-wave
+        infrared (Enhanced Thematic Mapper Plus)","center_wavelength":11.34,"full_width_half_max":2.05},{"name":"ETM_B7","common_name":"swir22","description":"Short-wave
+        infrared (Enhanced Thematic Mapper Plus)","center_wavelength":2.2,"full_width_half_max":0.28},{"name":"OLI_B1","common_name":"coastal","description":"Coastal/Aerosol
+        (Operational Land Imager)","center_wavelength":0.44,"full_width_half_max":0.02},{"name":"OLI_B2","common_name":"blue","description":"Visible
+        blue (Operational Land Imager)","center_wavelength":0.48,"full_width_half_max":0.06},{"name":"OLI_B3","common_name":"green","description":"Visible
+        green (Operational Land Imager)","center_wavelength":0.56,"full_width_half_max":0.06},{"name":"OLI_B4","common_name":"red","description":"Visible
+        red (Operational Land Imager)","center_wavelength":0.65,"full_width_half_max":0.04},{"name":"OLI_B5","common_name":"nir08","description":"Near
+        infrared (Operational Land Imager)","center_wavelength":0.87,"full_width_half_max":0.03},{"name":"OLI_B6","common_name":"swir16","description":"Short-wave
+        infrared (Operational Land Imager)","center_wavelength":1.61,"full_width_half_max":0.09},{"name":"OLI_B7","common_name":"swir22","description":"Short-wave
+        infrared (Operational Land Imager)","center_wavelength":2.2,"full_width_half_max":0.19},{"name":"TIRS_B10","common_name":"lwir11","description":"Long-wave
+        infrared (Thermal Infrared Sensor)","center_wavelength":10.9,"full_width_half_max":0.59}],"platform":["landsat-4","landsat-5","landsat-7","landsat-8","landsat-9"],"instruments":["tm","etm\u002B","oli","tirs"],"view:off_nadir":{"maximum":15,"minimum":0}},"description":"Landsat
+        Collection 2 Level-2 [Science Products](https://www.usgs.gov/landsat-missions/landsat-collection-2-level-2-science-products),
+        consisting of atmospherically corrected [surface reflectance](https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-reflectance)
+        and [surface temperature](https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature)
+        image data. Collection 2 Level-2 Science Products are available from August
+        22, 1982 to present.\n\nThis dataset represents the global archive of Level-2
+        data from [Landsat Collection 2](https://www.usgs.gov/core-science-systems/nli/landsat/landsat-collection-2)
+        acquired by the [Thematic Mapper](https://landsat.gsfc.nasa.gov/thematic-mapper/)
+        onboard Landsat 4 and 5, the [Enhanced Thematic Mapper](https://landsat.gsfc.nasa.gov/the-enhanced-thematic-mapper-plus-etm/)
+        onboard Landsat 7, and the [Operatational Land Imager](https://landsat.gsfc.nasa.gov/satellites/landsat-8/spacecraft-instruments/operational-land-imager/)
+        and [Thermal Infrared Sensor](https://landsat.gsfc.nasa.gov/satellites/landsat-8/spacecraft-instruments/thermal-infrared-sensor/)
+        onboard Landsat 8 and 9. Images are stored in [cloud-optimized GeoTIFF](https://www.cogeo.org/)
+        format.\n","item_assets":{"qa":{"type":"image/tiff; application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Surface
+        Temperature Quality Assessment Band","description":"Collection 2 Level-2 Quality
+        Assessment Band (ST_QA) Surface Temperature Product","raster:bands":[{"unit":"kelvin","scale":0.01,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"ang":{"type":"text/plain","roles":["metadata"],"title":"Angle
+        Coefficients File","description":"Collection 2 Level-1 Angle Coefficients
+        File"},"red":{"type":"image/tiff; application=geotiff; profile=cloud-optimized","roles":["data","reflectance"],"title":"Red
+        Band","eo:bands":[{"common_name":"red","description":"Visible red"}],"raster:bands":[{"scale":0.0000275,"nodata":0,"offset":-0.2,"data_type":"uint16","spatial_resolution":30}]},"blue":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","reflectance"],"title":"Blue
+        Band","eo:bands":[{"common_name":"blue","description":"Visible blue"}],"raster:bands":[{"scale":0.0000275,"nodata":0,"offset":-0.2,"data_type":"uint16","spatial_resolution":30}]},"drad":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Downwelled
+        Radiance Band","description":"Collection 2 Level-2 Downwelled Radiance Band
+        (ST_DRAD) Surface Temperature Product","raster:bands":[{"unit":"watt/steradian/square_meter/micrometer","scale":0.001,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"emis":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Emissivity
+        Band","description":"Collection 2 Level-2 Emissivity Band (ST_EMIS) Surface
+        Temperature Product","raster:bands":[{"unit":"emissivity coefficient","scale":0.0001,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"emsd":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Emissivity
+        Standard Deviation Band","description":"Collection 2 Level-2 Emissivity Standard
+        Deviation Band (ST_EMSD) Surface Temperature Product","raster:bands":[{"unit":"emissivity
+        coefficient","scale":0.0001,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"lwir":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","temperature"],"title":"Surface
+        Temperature Band","eo:bands":[{"common_name":"lwir","description":"Long-wave
+        infrared"}],"description":"Collection 2 Level-2 Thermal Infrared Band (ST_B6)
+        Surface Temperature","raster:bands":[{"unit":"kelvin","scale":0.00341802,"nodata":0,"offset":149,"data_type":"uint16","spatial_resolution":30}]},"trad":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Thermal
+        Radiance Band","description":"Collection 2 Level-2 Thermal Radiance Band (ST_TRAD)
+        Surface Temperature Product","raster:bands":[{"unit":"watt/steradian/square_meter/micrometer","scale":0.001,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"urad":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Upwelled
+        Radiance Band","description":"Collection 2 Level-2 Upwelled Radiance Band
+        (ST_URAD) Surface Temperature Product","raster:bands":[{"unit":"watt/steradian/square_meter/micrometer","scale":0.001,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"atran":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Atmospheric
+        Transmittance Band","description":"Collection 2 Level-2 Atmospheric Transmittance
+        Band (ST_ATRAN) Surface Temperature Product","raster:bands":[{"scale":0.0001,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"cdist":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Cloud
+        Distance Band","description":"Collection 2 Level-2 Cloud Distance Band (ST_CDIST)
+        Surface Temperature Product","raster:bands":[{"unit":"kilometer","scale":0.01,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]},"green":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","reflectance"],"title":"Green
+        Band","eo:bands":[{"common_name":"green","description":"Visible green","center_wavelength":0.56}],"raster:bands":[{"scale":0.0000275,"nodata":0,"offset":-0.2,"data_type":"uint16","spatial_resolution":30}]},"nir08":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","reflectance"],"title":"Near
+        Infrared Band 0.8","eo:bands":[{"common_name":"nir08","description":"Near
+        infrared"}],"raster:bands":[{"scale":0.0000275,"nodata":0,"offset":-0.2,"data_type":"uint16","spatial_resolution":30}]},"lwir11":{"gsd":100,"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","temperature"],"title":"Surface
+        Temperature Band","eo:bands":[{"name":"TIRS_B10","common_name":"lwir11","description":"Long-wave
+        infrared","center_wavelength":10.9,"full_width_half_max":0.59}],"description":"Collection
+        2 Level-2 Thermal Infrared Band (ST_B10) Surface Temperature","raster:bands":[{"unit":"kelvin","scale":0.00341802,"nodata":0,"offset":149,"data_type":"uint16","spatial_resolution":30}]},"swir16":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","reflectance"],"title":"Short-wave
+        Infrared Band 1.6","eo:bands":[{"common_name":"swir16","description":"Short-wave
+        infrared"}],"raster:bands":[{"scale":0.0000275,"nodata":0,"offset":-0.2,"data_type":"uint16","spatial_resolution":30}]},"swir22":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","reflectance"],"title":"Short-wave
+        Infrared Band 2.2","eo:bands":[{"common_name":"swir22","description":"Short-wave
+        infrared"}],"description":"Collection 2 Level-2 Short-wave Infrared Band 2.2
+        (SR_B7) Surface Reflectance","raster:bands":[{"scale":0.0000275,"nodata":0,"offset":-0.2,"data_type":"uint16","spatial_resolution":30}]},"coastal":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data","reflectance"],"title":"Coastal/Aerosol
+        Band","eo:bands":[{"name":"OLI_B1","common_name":"coastal","description":"Coastal/Aerosol","center_wavelength":0.44,"full_width_half_max":0.02}],"description":"Collection
+        2 Level-2 Coastal/Aerosol Band (SR_B1) Surface Reflectance","raster:bands":[{"scale":0.0000275,"nodata":0,"offset":-0.2,"data_type":"uint16","spatial_resolution":30}]},"mtl.txt":{"type":"text/plain","roles":["metadata"],"title":"Product
+        Metadata File (txt)","description":"Collection 2 Level-2 Product Metadata
+        File (txt)"},"mtl.xml":{"type":"application/xml","roles":["metadata"],"title":"Product
+        Metadata File (xml)","description":"Collection 2 Level-2 Product Metadata
+        File (xml)"},"cloud_qa":{"type":"image/tiff; application=geotiff; profile=cloud-optimized","roles":["cloud","cloud-shadow","snow-ice","water-mask"],"title":"Cloud
+        Quality Assessment Band","description":"Collection 2 Level-2 Cloud Quality
+        Assessment Band (SR_CLOUD_QA) Surface Reflectance Product","raster:bands":[{"unit":"bit
+        index","data_type":"uint8","spatial_resolution":30}],"classification:bitfields":[{"name":"ddv","length":1,"offset":0,"classes":[{"name":"not_ddv","value":0,"description":"Pixel
+        has no DDV"},{"name":"ddv","value":1,"description":"Pixel has DDV"}],"description":"Dense
+        Dark Vegetation (DDV)"},{"name":"cloud","length":1,"offset":1,"classes":[{"name":"not_cloud","value":0,"description":"Pixel
+        has no cloud"},{"name":"cloud","value":1,"description":"Pixel has cloud"}],"description":"Cloud
+        mask"},{"name":"cloud_shadow","length":1,"offset":2,"classes":[{"name":"not_shadow","value":0,"description":"Pixel
+        has no cloud shadow"},{"name":"shadow","value":1,"description":"Pixel has
+        cloud shadow"}],"description":"Cloud shadow mask"},{"name":"cloud_adjacent","length":1,"offset":3,"classes":[{"name":"not_adjacent","value":0,"description":"Pixel
+        is not adjacent to cloud"},{"name":"adjacent","value":1,"description":"Pixel
+        is adjacent to cloud"}],"description":"Cloud adjacency"},{"name":"snow","length":1,"offset":4,"classes":[{"name":"not_snow","value":0,"description":"Pixel
+        is not snow"},{"name":"shadow","value":1,"description":"Pixel is snow"}],"description":"Snow
+        mask"},{"name":"water","length":1,"offset":5,"classes":[{"name":"not_water","value":0,"description":"Pixel
+        is not water"},{"name":"water","value":1,"description":"Pixel is water"}],"description":"Water
+        mask"}]},"mtl.json":{"type":"application/json","roles":["metadata"],"title":"Product
+        Metadata File (json)","description":"Collection 2 Level-2 Product Metadata
+        File (json)"},"qa_pixel":{"type":"image/tiff; application=geotiff; profile=cloud-optimized","roles":["cloud","cloud-shadow","snow-ice","water-mask"],"title":"Pixel
+        Quality Assessment Band","description":"Collection 2 Level-1 Pixel Quality
+        Assessment Band (QA_PIXEL)","raster:bands":[{"unit":"bit index","nodata":1,"data_type":"uint16","spatial_resolution":30}]},"qa_radsat":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["saturation"],"raster:bands":[{"unit":"bit
+        index","data_type":"uint16","spatial_resolution":30}]},"qa_aerosol":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data-mask","water-mask"],"title":"Aerosol
+        Quality Assessment Band","description":"Collection 2 Level-2 Aerosol Quality
+        Assessment Band (SR_QA_AEROSOL) Surface Reflectance Product","raster:bands":[{"unit":"bit
+        index","nodata":1,"data_type":"uint8","spatial_resolution":30}],"classification:bitfields":[{"name":"fill","length":1,"offset":0,"classes":[{"name":"not_fill","value":0,"description":"Pixel
+        is not fill"},{"name":"fill","value":1,"description":"Pixel is fill"}],"description":"Image
+        or fill data"},{"name":"retrieval","length":1,"offset":1,"classes":[{"name":"not_valid","value":0,"description":"Pixel
+        retrieval is not valid"},{"name":"valid","value":1,"description":"Pixel retrieval
+        is valid"}],"description":"Valid aerosol retrieval"},{"name":"water","length":1,"offset":2,"classes":[{"name":"not_water","value":0,"description":"Pixel
+        is not water"},{"name":"water","value":1,"description":"Pixel is water"}],"description":"Water
+        mask"},{"name":"interpolated","length":1,"offset":5,"classes":[{"name":"not_interpolated","value":0,"description":"Pixel
+        is not interpolated aerosol"},{"name":"interpolated","value":1,"description":"Pixel
+        is interpolated aerosol"}],"description":"Aerosol interpolation"},{"name":"level","length":2,"offset":6,"classes":[{"name":"climatology","value":0,"description":"No
+        aerosol correction applied"},{"name":"low","value":1,"description":"Low aerosol
+        level"},{"name":"medium","value":2,"description":"Medium aerosol level"},{"name":"high","value":3,"description":"High
+        aerosol level"}],"description":"Aerosol level"}]},"atmos_opacity":{"type":"image/tiff;
+        application=geotiff; profile=cloud-optimized","roles":["data"],"title":"Atmospheric
+        Opacity Band","description":"Collection 2 Level-2 Atmospheric Opacity Band
+        (SR_ATMOS_OPACITY) Surface Reflectance Product","raster:bands":[{"scale":0.001,"nodata":-9999,"data_type":"int16","spatial_resolution":30}]}},"msft:region":"westeurope","stac_version":"1.0.0","msft:group_id":"landsat","msft:container":"landsat-c2","stac_extensions":["https://stac-extensions.github.io/item-assets/v1.0.0/schema.json","https://stac-extensions.github.io/view/v1.0.0/schema.json","https://stac-extensions.github.io/scientific/v1.0.0/schema.json","https://stac-extensions.github.io/raster/v1.0.0/schema.json","https://stac-extensions.github.io/eo/v1.0.0/schema.json","https://stac-extensions.github.io/table/v1.2.0/schema.json","https://stac-extensions.github.io/storage/v2.0.0/schema.json"],"storage:schemes":{"azure":{"type":"ms-azure","region":"westeurope","account":"landsateuwest","platform":"https://{account}.blob.core.windows.net","container":"landsat-c2"}},"msft:storage_account":"landsateuwest","msft:short_description":"Landsat
+        Collection 2 Level-2 data from the Thematic Mapper (TM) onboard Landsat 4
+        and 5, the Enhanced Thematic Mapper Plus (ETM\u002B) onboard Landsat 7, and
+        the Operational Land Imager (OLI) and Thermal Infrared Sensor (TIRS) onboard
+        Landsat 8 and 9."}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '19636'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 20 Oct 2026 16:47:54 GMT
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - X-PC-Request-Entity,DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization
+      access-control-allow-methods:
+      - PUT, GET, POST, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      access-control-max-age:
+      - '1728000'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-azure-ref:
+      - 20261020T164754Z-16c875867dc46svphC1CYS8spn0000000ad00000000002bt
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/queryables
+  response:
+    body:
+      string: '{"$id":"https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/queryables","type":"object","title":"STAC
+        Queryables.","$schema":"http://json-schema.org/draft-07/schema#","properties":{"id":{"$ref":"https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/definitions/core/allOf/2/properties/id","title":"Item
+        ID","description":"Item identifier"},"gsd":{"type":"number"},"created":{"type":"string"},"sci:doi":{"type":"string","title":"Data
+        DOI","pattern":"^10\\.[0-9a-zA-Z]{4,}/[^\\s]\u002B$"},"datetime":{"type":"string","title":"Acquired","format":"date-time","pattern":"(\\\u002B00:00|Z)$","description":"Datetime"},"geometry":{"$ref":"https://geojson.org/schema/Feature.json","title":"Item
+        Geometry","description":"Item Geometry"},"platform":{"enum":["landsat-4","landsat-5","landsat-7","landsat-8","landsat-9"],"type":"string","title":"Platform"},"proj:epsg":{"type":["integer","null"],"title":"EPSG
+        code"},"instrument":{"enum":["etm\u002B","oli","tirs","tm"],"type":"string","title":"Instrument"},"proj:shape":{"type":"array","items":{"type":"integer"},"title":"Shape","maxItems":2,"minItems":2},"description":{"type":"string"},"instruments":{"type":"array"},"end_datetime":{"type":"string","title":"End
+        datetime","format":"date-time","pattern":"(\\\u002B00:00|Z)$","description":"End
+        datetime"},"eo:cloud_cover":{"$ref":"https://stac-extensions.github.io/eo/v1.0.0/schema.json#/definitions/fields/properties/eo:cloud_cover"},"proj:transform":{"type":"array","items":{"type":"number"},"oneOf":[{"maxItems":6,"minItems":6},{"maxItems":9,"minItems":9}],"title":"Transform"},"start_datetime":{"type":"string","title":"Start
+        datetime","format":"date-time","pattern":"(\\\u002B00:00|Z)$","description":"Start
+        datetime"},"view:off_nadir":{"type":"number","title":"Off Nadir","maximum":90,"minimum":0},"landsat:wrs_row":{"type":"string","title":"WRS
+        Row"},"landsat:scene_id":{"type":"string","title":"Scene ID"},"landsat:wrs_path":{"type":"string","title":"WRS
+        Path"},"landsat:wrs_type":{"type":"string"},"view:sun_azimuth":{"type":"number","title":"Sun
+        Azimuth","maximum":360,"minimum":0},"landsat:correction":{"type":"string"},"view:sun_elevation":{"type":"number","title":"Sun
+        Elevation","maximum":90,"minimum":-90},"landsat:cloud_cover_land":{"type":"number","title":"Cloud
+        Cover Land","maximum":100,"minimum":0},"landsat:collection_number":{"type":"string"},"landsat:collection_category":{"enum":["T1","T2"],"type":"string","title":"Collection
+        Cat."}},"additionalProperties":true}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2518'
+      Content-Type:
+      - application/schema+json; charset=utf-8
+      Date:
+      - Tue, 20 Oct 2026 16:47:55 GMT
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - X-PC-Request-Entity,DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization
+      access-control-allow-methods:
+      - PUT, GET, POST, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      access-control-max-age:
+      - '1728000'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-azure-ref:
+      - 20261020T164754Z-16c875867dcks625hC1CYSmmfs0000001vf0000000002yr8
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+version: 1

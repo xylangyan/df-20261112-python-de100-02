@@ -1,0 +1,49 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://earth-search.aws.element84.com/v0
+  response:
+    body:
+      string: '{"stac_version":"1.0.0-beta.2","stac_api_version":"0.9.0","id":"earth-search","title":"Earth
+        Search","description":"A STAC API of AWS Public Datasets powered by stac-server","links":[{"rel":"child","href":"https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a"},{"rel":"child","href":"https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l1c"},{"rel":"child","href":"https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs"},{"rel":"child","href":"https://earth-search.aws.element84.com/v0/collections/landsat-8-l1-c1"},{"rel":"service-desc","type":"application/vnd.oai.openapi+json;version=3.0","href":"https://earth-search.aws.element84.com/v0/api"},{"rel":"conformance","type":"application/json","href":"https://earth-search.aws.element84.com/v0/conformance"},{"rel":"children","type":"application/json","href":"https://earth-search.aws.element84.com/v0/collections"},{"rel":"self","type":"application/json","href":"https://earth-search.aws.element84.com/v0/"},{"rel":"search","type":"application/json","href":"https://earth-search.aws.element84.com/v0/search"},{"rel":"docs","href":"https://stac-utils.github.io/stac-server/"}]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1180'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 20 Oct 2026 16:40:17 GMT
+      Via:
+      - 1.1 3d0e42610dcaae09fca89f218dd914de.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - WaVUmbcjNiF9rzMeWoLk6wQUDv3-0wobGhnTNYxxjbOd8GxKXG0-ag==
+      X-Amz-Cf-Pop:
+      - DEN53-P4
+      X-Amzn-Trace-Id:
+      - Root=1-6ad79970-6a6f4e2a3845f83554dd8ece;Parent=3f82daab109e8967;Sampled=0;Lineage=1:308471e4:0
+      X-Cache:
+      - Miss from cloudfront
+      x-amz-apigw-id:
+      - FjTpqGXcPHcEQQw=
+      x-amzn-RequestId:
+      - accc6387-d71d-441b-8b7b-9ce236c1cef9
+    status:
+      code: 200
+      message: OK
+version: 1

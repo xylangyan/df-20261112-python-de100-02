@@ -1,0 +1,1205 @@
+import contextlib
+import json
+import os.path
+import warnings
+from collections.abc import Callable
+from datetime import datetime
+from tempfile import TemporaryDirectory
+from typing import Any
+from urllib.parse import parse_qs, urlsplit
+
+import pystac
+import pytest
+from dateutil.tz import tzutc
+from pystac import MediaType
+from requests_mock import Mocker
+
+from pystac_client import Client, CollectionClient
+from pystac_client._utils import Modifiable
+from pystac_client.conformance import ConformanceClasses
+from pystac_client.errors import ClientTypeError, IgnoredResultWarning
+from pystac_client.exceptions import APIError
+from pystac_client.stac_api_io import StacApiIO
+from pystac_client.warnings import (
+    DoesNotConformTo,
+    FallbackToPystac,
+    MissingLink,
+    NoConformsTo,
+    PystacClientWarning,
+    strict,
+)
+
+from .helpers import STAC_URLS, TEST_DATA, read_data_file
+
+COLLECTION_TRANSACTION_URI = (
+    "https://api.stacspec.org/v1.0.0/collections/extensions/transaction"
+)
+
+
+class TestAPI:
+    @pytest.mark.vcr
+    def test_instance(self) -> None:
+        api = Client.open(STAC_URLS["PLANETARY-COMPUTER"])
+
+        # An API instance is also a Catalog instance
+        assert isinstance(api, pystac.Catalog)
+
+        assert str(api) == "<Client id=microsoft-pc>"
+
+    @pytest.mark.vcr
+    def test_links(self) -> None:
+        api = Client.open(STAC_URLS["EARTH-SEARCH"])
+
+        # Should be able to get collections via links as with a typical PySTAC Catalog
+        collection_links = api.get_links("child")
+        assert len(collection_links) > 0
+
+        collections = list(api.get_collections())
+        assert len(collection_links) == len(collections)
+
+        first_child_link = api.get_single_link("child")
+        assert first_child_link is not None
+        first_collection = first_child_link.resolve_stac_object(root=api).target
+        assert isinstance(first_collection, pystac.Collection)
+
+    @pytest.mark.vcr
+    def test_from_file(self) -> None:
+        api = Client.from_file(STAC_URLS["PLANETARY-COMPUTER"])
+
+        assert api.title == "Microsoft Planetary Computer STAC API"
+
+    def test_invalid_url(self) -> None:
+        with pytest.raises(TypeError):
+            Client.open()  # type: ignore[call-arg]
+
+    def test_get_collections_with_conformance(self, requests_mock: Mocker) -> None:
+        """Checks that the "data" endpoint is used if the API published the
+        STAC API Collections conformance class."""
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        pc_collection_dict = read_data_file(
+            "planetary-computer-aster-l1t-collection.json", parse_json=True
+        )
+
+        # Mock the root catalog
+        requests_mock.get(
+            STAC_URLS["PLANETARY-COMPUTER"], status_code=200, text=pc_root_text
+        )
+        api = Client.open(STAC_URLS["PLANETARY-COMPUTER"])
+
+        assert api.conforms_to(ConformanceClasses.COLLECTIONS)
+
+        # Get & mock the collections (rel type "data") link
+        collections_link = api.get_single_link("data")
+        assert collections_link is not None
+        requests_mock.get(
+            collections_link.href,
+            status_code=200,
+            json={"collections": [pc_collection_dict], "links": []},
+        )
+        _ = next(api.get_collections())
+
+        history = requests_mock.request_history
+        assert len(history) == 2
+        assert history[1].url == collections_link.href
+
+    def test_get_collections_single_slash(self, requests_mock: Mocker) -> None:
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        root_url = "http://pystac-client.test/"
+        requests_mock.get(root_url, status_code=200, text=pc_root_text)
+        api = Client.open(root_url)
+        pc_collection_dict = read_data_file(
+            "planetary-computer-aster-l1t-collection.json", parse_json=True
+        )
+        requests_mock.get(
+            f"{root_url}collections",  # note the lack of the slash
+            status_code=200,
+            json={"collections": [pc_collection_dict], "links": []},
+        )
+        api.remove_links("data")
+        with pytest.warns(MissingLink, match="No link with rel='data'"):
+            _ = next(api.get_collections())
+        history = requests_mock.request_history
+        assert len(history) == 2
+        assert history[1].url == f"{root_url}collections"
+
+    def test_keep_trailing_slash_on_root(self, requests_mock: Mocker) -> None:
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        root_url = "http://pystac-client.test/"
+        requests_mock.get(root_url, status_code=200, text=pc_root_text)
+        client = Client.open(root_url)
+        self_href = client.get_self_href()
+        assert self_href
+        assert self_href.endswith("/")
+
+    def test_fall_back_to_data_link_for_collections(
+        self, requests_mock: Mocker
+    ) -> None:
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        root_url = "http://pystac-client.test/"
+        requests_mock.get(root_url, status_code=200, text=pc_root_text)
+        api = Client.open(root_url)
+        api.set_self_href(None)
+        pc_collection_dict = read_data_file(
+            "planetary-computer-aster-l1t-collection.json", parse_json=True
+        )
+        requests_mock.get(
+            # the href of the data link
+            "https://planetarycomputer.microsoft.com/api/stac/v1/collections",
+            status_code=200,
+            json={"collections": [pc_collection_dict], "links": []},
+        )
+        _ = next(api.get_collections())
+        history = requests_mock.request_history
+        assert len(history) == 2
+        assert (
+            history[1].url
+            == "https://planetarycomputer.microsoft.com/api/stac/v1/collections"
+        )
+
+    def test_build_absolute_href_from_data_link(self, requests_mock: Mocker) -> None:
+        pc_root = read_data_file("planetary-computer-root.json", parse_json=True)
+        assert isinstance(pc_root, dict)
+        for link in pc_root["links"]:
+            if link["rel"] == "data":
+                link["href"] = "./collections"
+        root_url = "http://pystac-client.test/"
+        requests_mock.get(root_url, status_code=200, text=json.dumps(pc_root))
+        api = Client.open(root_url)
+        api.set_self_href(None)
+        api.add_link(
+            pystac.Link(
+                rel="self",
+                target="https://planetarycomputer.microsoft.com/api/stac/v1/",
+            )
+        )
+        pc_collection_dict = read_data_file(
+            "planetary-computer-aster-l1t-collection.json", parse_json=True
+        )
+        requests_mock.get(
+            # the href of the data link
+            "https://planetarycomputer.microsoft.com/api/stac/v1/collections",
+            status_code=200,
+            json={"collections": [pc_collection_dict], "links": []},
+        )
+        _ = next(api.get_collections())
+        history = requests_mock.request_history
+        assert len(history) == 2
+        assert (
+            history[1].url
+            == "https://planetarycomputer.microsoft.com/api/stac/v1/collections"
+        )
+
+    def test_error_if_no_self_href_or_data_link(self, requests_mock: Mocker) -> None:
+        pc_root = read_data_file("planetary-computer-root.json", parse_json=True)
+        assert isinstance(pc_root, dict)
+        pc_root["links"] = [link for link in pc_root["links"] if link["rel"] != "data"]
+        root_url = "http://pystac-client.test/"
+        requests_mock.get(root_url, status_code=200, text=json.dumps(pc_root))
+        api = Client.open(root_url)
+        api.set_self_href(None)
+        with pytest.warns(MissingLink, match="No link with rel='data'"):
+            with pytest.raises(ValueError, match="does not have a self_href set"):
+                _ = api.get_collection("an-id")
+
+    def test_custom_request_parameters(self, requests_mock: Mocker) -> None:
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        pc_collection_dict = read_data_file(
+            "planetary-computer-collection.json", parse_json=True
+        )
+
+        requests_mock.get(
+            STAC_URLS["PLANETARY-COMPUTER"], status_code=200, text=pc_root_text
+        )
+
+        init_qp_name = "my-param"
+        init_qp_value = "some-value"
+
+        api = Client.open(
+            STAC_URLS["PLANETARY-COMPUTER"], parameters={init_qp_name: init_qp_value}
+        )
+
+        # Ensure that the Client will use the /collections endpoint and not fall back
+        # to traversing child links.
+        assert api.conforms_to(ConformanceClasses.COLLECTIONS)
+
+        # Get the /collections endpoint
+        collections_link = api.get_single_link("data")
+        assert collections_link is not None
+
+        # Mock the request
+        requests_mock.get(
+            collections_link.href,
+            status_code=200,
+            json={"collections": [pc_collection_dict], "links": []},
+        )
+
+        # Make the collections request
+        _ = next(api.get_collections())
+
+        history = requests_mock.request_history
+        assert len(history) == 2
+
+        actual_qs = urlsplit(history[1].url).query
+        actual_qp = parse_qs(actual_qs)
+
+        # Check that the param from the init method is present
+        assert init_qp_name in actual_qp
+        assert len(actual_qp[init_qp_name]) == 1
+        assert actual_qp[init_qp_name][0] == init_qp_value
+
+    def test_custom_query_params_get_collections_propagation(
+        self, requests_mock: Mocker
+    ) -> None:
+        """Checks that query params passed to the init method are added to requests for
+        CollectionClients fetched from
+        the /collections endpoint."""
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        pc_collection_dict = read_data_file(
+            "planetary-computer-collection.json", parse_json=True
+        )
+
+        requests_mock.get(
+            STAC_URLS["PLANETARY-COMPUTER"], status_code=200, text=pc_root_text
+        )
+
+        init_qp_name = "my-param"
+        init_qp_value = "some-value"
+
+        client = Client.open(
+            STAC_URLS["PLANETARY-COMPUTER"], parameters={init_qp_name: init_qp_value}
+        )
+
+        # Get the /collections endpoint
+        collections_link = client.get_single_link("data")
+        assert collections_link is not None
+
+        # Mock the request
+        requests_mock.get(
+            collections_link.href,
+            status_code=200,
+            json={"collections": [pc_collection_dict], "links": []},
+        )
+
+        # Make the collections request
+        collection = next(client.get_collections())
+
+        # Mock the items endpoint
+        items_link = collection.get_single_link("items")
+        assert items_link is not None
+        requests_mock.get(
+            items_link.href,
+            status_code=200,
+            json={
+                "type": "FeatureCollection",
+                "stac_version": "1.0.0",
+                "features": [],
+                "links": [],
+            },
+        )
+
+        # Make the items request
+        _ = list(collection.get_items())
+
+        history = requests_mock.request_history
+        assert len(history) == 3
+
+        actual_qs = urlsplit(history[2].url).query
+        actual_qp = parse_qs(actual_qs)
+
+        # Check that the query param from the root Client is present
+        assert init_qp_name in actual_qp
+        assert len(actual_qp[init_qp_name]) == 1
+        assert actual_qp[init_qp_name][0] == init_qp_value
+
+    def test_custom_query_params_get_collection_propagation(
+        self, requests_mock: Mocker
+    ) -> None:
+        """Checks that query params passed to the init method are added to
+        requests for CollectionClients fetched from the /collections endpoint."""
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        pc_collection_dict = read_data_file(
+            "planetary-computer-collection.json", parse_json=True
+        )
+        assert isinstance(pc_collection_dict, dict)
+        pc_collection_id = pc_collection_dict["id"]
+
+        requests_mock.get(
+            STAC_URLS["PLANETARY-COMPUTER"], status_code=200, text=pc_root_text
+        )
+
+        init_qp_name = "my-param"
+        init_qp_value = "some-value"
+
+        client = Client.open(
+            STAC_URLS["PLANETARY-COMPUTER"], parameters={init_qp_name: init_qp_value}
+        )
+
+        # Get the /collections endpoint
+        collections_link = client.get_single_link("data")
+        assert collections_link is not None
+        collection_href = collections_link.href + "/" + pc_collection_id
+
+        # Mock the request
+        requests_mock.get(collection_href, status_code=200, json=pc_collection_dict)
+
+        # Make the collections request
+        collection = client.get_collection(pc_collection_id)
+        assert collection is not None
+
+        # Mock the items endpoint
+        items_link = collection.get_single_link("items")
+        assert items_link is not None
+        requests_mock.get(
+            items_link.href,
+            status_code=200,
+            json={
+                "type": "FeatureCollection",
+                "stac_version": "1.0.0",
+                "features": [],
+                "links": [],
+            },
+        )
+
+        # Make the items request
+        _ = list(collection.get_items())
+
+        history = requests_mock.request_history
+        assert len(history) == 3
+
+        actual_qs = urlsplit(history[2].url).query
+        actual_qp = parse_qs(actual_qs)
+
+        # Check that the query param from the root Client is present
+        assert init_qp_name in actual_qp
+        assert len(actual_qp[init_qp_name]) == 1
+        assert actual_qp[init_qp_name][0] == init_qp_value
+
+    def test_get_collections_without_conformance_fallsback_to_pystac(
+        self, requests_mock: Mocker
+    ) -> None:
+        pc_root_dict = read_data_file("planetary-computer-root.json", parse_json=True)
+        pc_collection_dict = read_data_file(
+            "planetary-computer-aster-l1t-collection.json", parse_json=True
+        )
+
+        # Remove the collections conformance class
+        pc_root_dict["conformsTo"].remove(
+            "https://api.stacspec.org/v1.0.0-beta.1/collections"
+        )
+
+        # Remove all child links except for the collection that we are mocking
+        pc_collection_href = next(
+            link["href"]
+            for link in pc_collection_dict["links"]
+            if link["rel"] == "self"
+        )
+        pc_root_dict["links"] = [
+            link
+            for link in pc_root_dict["links"]
+            if link["rel"] != "child" or link["href"] == pc_collection_href
+        ]
+
+        # Mock the root catalog
+        requests_mock.get(
+            STAC_URLS["PLANETARY-COMPUTER"], status_code=200, json=pc_root_dict
+        )
+        api = Client.open(STAC_URLS["PLANETARY-COMPUTER"])
+
+        assert api.has_conforms_to()
+        assert not api.conforms_to(ConformanceClasses.COLLECTIONS)
+        assert not api.conforms_to(ConformanceClasses.FEATURES)
+
+        # Mock the collection
+        requests_mock.get(pc_collection_href, status_code=200, json=pc_collection_dict)
+
+        with pytest.warns(FallbackToPystac):
+            with pytest.warns(DoesNotConformTo, match="COLLECTIONS, FEATURES"):
+                _ = next(api.get_collections())
+
+        history = requests_mock.request_history
+        assert len(history) == 2
+
+    def test_opening_a_collection(self) -> None:
+        path = str(TEST_DATA / "planetary-computer-aster-l1t-collection.json")
+        with pytest.raises(ClientTypeError):
+            Client.open(path)
+
+    def test_headers_with_custom_stac_io(self, requests_mock: Mocker) -> None:
+        pc_root_dict = read_data_file("planetary-computer-root.json", parse_json=True)
+        requests_mock.get(
+            STAC_URLS["PLANETARY-COMPUTER"],
+            status_code=200,
+            json=pc_root_dict,
+            request_headers={"ski": "pow", "shred": "gnar"},
+        )
+        stac_io = StacApiIO(headers={"ski": "pow"})
+        _ = Client.open(
+            STAC_URLS["PLANETARY-COMPUTER"], headers={"shred": "gnar"}, stac_io=stac_io
+        )
+
+
+class TestAPISearch:
+    @pytest.fixture(scope="function")
+    def api(self) -> Client:
+        api = Client.from_file(str(TEST_DATA / "planetary-computer-root.json"))
+        search_link = api.get_search_link()
+        assert search_link
+        search_link.extra_fields["method"] = "POST"
+        return api
+
+    def test_search_conformance_error(self, api: Client) -> None:
+        # Remove item search conformance
+        api.remove_conforms_to("ITEM_SEARCH")
+
+        with strict():
+            with pytest.raises(DoesNotConformTo, match="ITEM_SEARCH"):
+                api.search(limit=10, max_items=10, collections="mr-peebles")
+
+    def test_no_search_link(self, api: Client) -> None:
+        # Remove the search link
+        api.remove_links("search")
+
+        with strict():
+            with pytest.raises(
+                MissingLink,
+                match="No link with rel='search' could be found on this Client",
+            ):
+                api.search(limit=10, max_items=10, collections="naip")
+
+    def test_no_conforms_to(self) -> None:
+        with open(str(TEST_DATA / "planetary-computer-root.json")) as f:
+            data = json.load(f)
+        del data["conformsTo"]
+        with TemporaryDirectory() as temporary_directory:
+            path = os.path.join(temporary_directory, "catalog.json")
+            with open(path, "w") as f:
+                json.dump(data, f)
+            api = Client.from_file(path)
+
+        with strict():
+            with pytest.raises(DoesNotConformTo, match="ITEM_SEARCH"):
+                api.search(limit=10, max_items=10, collections="naip")
+
+    def test_search(self, api: Client) -> None:
+        results = api.search(
+            bbox=[-73.21, 43.99, -73.12, 44.05],
+            collections="naip",
+            limit=10,
+            max_items=20,
+            datetime=[datetime(2020, 1, 1, 0, 0, 0, tzinfo=tzutc()), None],
+        )
+
+        assert results._parameters == {
+            "bbox": (-73.21, 43.99, -73.12, 44.05),
+            "collections": ("naip",),
+            "limit": 10,
+            "datetime": "2020-01-01T00:00:00Z/..",
+        }
+
+    def test_json_search_link(self, api: Client) -> None:
+        search_link = api.get_single_link(rel="search")
+        assert search_link
+        api.remove_links(rel="search")
+        search_link.media_type = MediaType.JSON
+        api.add_link(search_link)
+        api.search(limit=1, max_items=1, collections="naip")
+
+    @pytest.mark.parametrize(
+        ("advertised_method", "requested_method", "available_method"),
+        [
+            (None, "POST", "GET"),
+            ("GET", "POST", "GET"),
+            ("POST", "GET", "POST"),
+            ("GET", None, "GET"),
+        ],
+    )
+    def test_search_warns_if_method_is_not_advertised(
+        self,
+        api: Client,
+        advertised_method: str | None,
+        requested_method: str | None,
+        available_method: str,
+    ) -> None:
+        search_link = api.get_search_link()
+        assert search_link
+        search_link.extra_fields = (
+            {"method": advertised_method} if advertised_method else {}
+        )
+
+        requested_method_name = requested_method or "POST"
+        with pytest.warns(
+            PystacClientWarning,
+            match=(
+                f"requested method '{requested_method_name}'.*"
+                f"Available methods: {available_method}"
+            ),
+        ):
+            api.search(method=requested_method)
+
+    @pytest.mark.parametrize(
+        ("advertised_methods", "requested_method"),
+        [
+            (("GET", "POST"), "GET"),
+            (("GET", "POST"), "POST"),
+            (("POST",), None),
+        ],
+    )
+    def test_search_does_not_warn_if_method_is_advertised(
+        self,
+        api: Client,
+        advertised_methods: tuple[str, ...],
+        requested_method: str | None,
+    ) -> None:
+        search_link = api.get_search_link()
+        assert search_link
+        api.remove_links("search")
+        for method in advertised_methods:
+            api.add_link(
+                pystac.Link(
+                    rel="search",
+                    target=search_link.target,
+                    media_type=search_link.media_type,
+                    extra_fields={"method": method},
+                )
+            )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", PystacClientWarning)
+            api.search(method=requested_method)
+
+    @pytest.mark.vcr
+    def test_search_max_items_unlimited_default(self, api: Client) -> None:
+        search = api.search(
+            bbox=[-73.21, 43.99, -73.12, 45.05],
+            collections="naip",
+            datetime="2014-01-01/2020-12-31",
+        )
+        items = list(search.items())
+        assert len(items) > 100
+
+
+class TestAPICollectionSearch:
+    @pytest.fixture(scope="function")
+    def api(self) -> Client:
+        return Client.from_file(str(TEST_DATA / "fedeo_clearinghouse.json"))
+
+    def test_search_conformance_error(self, api: Client) -> None:
+        # Remove collection search conformance
+        api.remove_conforms_to("COLLECTION_SEARCH")
+        api.remove_conforms_to("COLLECTIONS")
+
+        with strict():
+            with pytest.raises(DoesNotConformTo, match="COLLECTION_SEARCH"):
+                api.collection_search(limit=10, max_collections=10, q="test")
+
+    def test_search_conformance_warning(self) -> None:
+        api = Client.from_file(str(TEST_DATA / "planetary-computer-root.json"))
+
+        # Remove collection search conformance just in case...
+        api.remove_conforms_to("COLLECTION_SEARCH")
+
+        with strict():
+            with pytest.warns(UserWarning, match="COLLECTION_SEARCH"):
+                api.collection_search(limit=10, max_collections=10, q="test")
+
+    @pytest.mark.vcr
+    def test_search(self, api: Client) -> None:
+        results = api.collection_search(
+            bbox=[-73.21, 43.99, -73.12, 44.05],
+            limit=10,
+            datetime=[datetime(2020, 1, 1, 0, 0, 0, tzinfo=tzutc()), None],
+        )
+
+        assert results._parameters == {
+            "bbox": (-73.21, 43.99, -73.12, 44.05),
+            "limit": 10,
+            "datetime": "2020-01-01T00:00:00Z/..",
+        }
+
+
+class MySign:
+    def __init__(self) -> None:
+        self.call_count = 0
+
+    def __call__(self, x: Modifiable) -> None:
+        self.call_count += 1
+
+
+class TestSigning:
+    @pytest.mark.vcr
+    def test_signing(self) -> None:
+        sign = MySign()
+        # sign is callable, but mypy keeps trying to interpret it as a "MySign" object.
+        client = Client.open(STAC_URLS["PLANETARY-COMPUTER"], modifier=sign)
+        assert client.modifier is sign
+
+        collection = client.get_collection("cil-gdpcir-cc0")
+        assert collection
+        assert isinstance(collection, CollectionClient)
+        assert collection.modifier is sign
+        assert sign.call_count == 1
+
+        collection.get_item("cil-gdpcir-INM-INM-CM5-0-ssp585-r1i1p1f1-day")
+        assert sign.call_count == 2
+
+        next(client.get_collections())
+        assert sign.call_count == 3
+
+        search = client.search(collections=["sentinel-2-l2a"], max_items=10)
+        next(search.items_as_dicts())
+        assert sign.call_count == 4
+
+        next(search.items())
+        assert sign.call_count == 5
+
+        next(search.pages_as_dicts())
+        assert sign.call_count == 6
+
+        next(search.pages())
+        assert sign.call_count == 7
+
+        search.item_collection_as_dict()
+        assert sign.call_count == 8
+
+        search.item_collection()
+        assert sign.call_count == 9
+
+    @pytest.mark.vcr
+    def test_sign_with_return_warns(self) -> None:
+        def modifier_ok(x: Any) -> Any:
+            return x
+
+        def modifier_bad(x: Any) -> Any:
+            return 0
+
+        client = Client.open(STAC_URLS["PLANETARY-COMPUTER"], modifier=modifier_ok)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            client.get_collection("sentinel-2-l2a")
+
+        client = Client.open(STAC_URLS["PLANETARY-COMPUTER"], modifier=modifier_bad)
+        with pytest.warns(IgnoredResultWarning):
+            client.get_collection("sentinel-2-l2a")
+
+
+class TestQueryables:
+    @pytest.mark.vcr
+    def test_get_queryables_collections(self) -> None:
+        api = Client.open(STAC_URLS["PLANETARY-COMPUTER"])
+        with pytest.warns(MissingLink, match="queryables"):
+            col = api.get_collection("3dep-seamless")
+            assert isinstance(col, CollectionClient)
+            col.remove_links("http://www.opengis.net/def/rel/ogc/1.0/queryables")
+            tdep_seamless_props = col.get_queryables()["properties"]
+            col = api.get_collection("fia")
+            assert isinstance(col, CollectionClient)
+            fia_props = col.get_queryables()["properties"]
+            result = api.get_merged_queryables(["fia", "3dep-seamless"])
+        assert "properties" in result
+        assert "id" in result["properties"]
+        assert set(fia_props.keys()).issubset(result["properties"])
+        assert set(tdep_seamless_props.keys()).issubset(result["properties"])
+
+    def test_get_queryables_errors(self, requests_mock: Mocker) -> None:
+        pc_root_text = read_data_file("planetary-computer-root.json")
+        root_url = "http://pystac-client.test/"
+        requests_mock.get(root_url, status_code=200, text=pc_root_text)
+        api = Client.open(root_url)
+        with pytest.raises(DoesNotConformTo, match="FILTER"):
+            api.get_queryables()
+
+        assert api._stac_io is not None
+        api.add_conforms_to("FILTER")
+        self_href = api.get_self_href()
+        api.set_self_href(None)
+        with pytest.warns(MissingLink, match="queryables"):
+            with pytest.raises(ValueError, match="does not have a self_href set"):
+                api.get_queryables()
+
+        api.set_self_href(self_href)
+        api._stac_io = None
+        with pytest.warns(MissingLink, match="queryables"):
+            with pytest.raises(APIError, match="API access is not properly configured"):
+                api.get_queryables()
+
+
+class TestConformsTo:
+    def test_ignore_conformance_is_deprecated_and_noop(self) -> None:
+        with pytest.warns(
+            FutureWarning, match="`ignore_conformance` option is deprecated"
+        ):
+            client = Client.open(
+                str(TEST_DATA / "planetary-computer-root.json"),
+                ignore_conformance=True,
+            )
+        assert client.has_conforms_to()
+        assert client.conforms_to(ConformanceClasses.CORE)
+
+    def test_set_conforms_to_using_list_of_uris(self) -> None:
+        client = Client.from_file(str(TEST_DATA / "planetary-computer-root.json"))
+        client.set_conforms_to(["https://api.stacspec.org/v1.0.0-rc.2/core"])
+
+        assert client.conforms_to(ConformanceClasses.CORE)
+
+    def test_add_and_remove_conforms_to_by_string(self) -> None:
+        client = Client.from_file(str(TEST_DATA / "planetary-computer-root.json"))
+
+        client.remove_conforms_to("core")
+        assert not client.conforms_to(ConformanceClasses.CORE)
+
+        client.add_conforms_to("core")
+        assert client.conforms_to("CORE")
+
+    def test_clear_all_conforms_to(self) -> None:
+        client = Client.from_file(str(TEST_DATA / "planetary-computer-root.json"))
+        client.clear_conforms_to()
+        assert not client.has_conforms_to()
+
+    def test_empty_conforms_to(self) -> None:
+        client = Client.from_file(str(TEST_DATA / "planetary-computer-root.json"))
+        client.set_conforms_to([])
+        assert client.has_conforms_to(), "The conformsTo field should still exist"
+
+        assert not client.conforms_to(ConformanceClasses.CORE)
+        assert not client.conforms_to(ConformanceClasses.ITEM_SEARCH)
+
+    def test_no_conforms_to_falls_back_to_pystac(self) -> None:
+        client = Client.from_file(str(TEST_DATA / "planetary-computer-root.json"))
+        client.clear_conforms_to()
+
+        with strict():
+            with pytest.raises(FallbackToPystac):
+                next(client.get_collections())
+
+    @pytest.mark.vcr
+    def test_changing_conforms_to_changes_behavior(self) -> None:
+        with pytest.warns(NoConformsTo):
+            client = Client.open("https://earth-search.aws.element84.com/v0")
+
+        with pytest.warns(FallbackToPystac):
+            next(client.get_collections())
+
+        client.add_conforms_to("COLLECTIONS")
+
+        with pytest.warns(MissingLink, match="rel='data'"):
+            next(client.get_collections())
+
+
+@pytest.mark.vcr
+def test_collections_are_clients() -> None:
+    # https://github.com/stac-utils/pystac-client/issues/548
+    catalog = Client.open(
+        "https://planetarycomputer.microsoft.com/api/stac/v1/",
+    )
+    collection = catalog.get_collection("cil-gdpcir-cc-by")
+    assert collection is not None
+    item = collection.get_item("cil-gdpcir-NUIST-NESM3-ssp585-r1i1p1f1-day")
+    assert item is not None
+    item.get_collection()
+
+
+@pytest.mark.vcr
+def test_get_items_without_ids() -> None:
+    client = Client.open(
+        "https://stac.eoapi.dev",
+    )
+    next(client.get_items())
+
+
+@pytest.mark.vcr
+def test_non_recursion_on_fallback() -> None:
+    path = "https://raw.githubusercontent.com/stac-utils/pystac/v1.9.0/docs/example-catalog/catalog.json"
+    catalog = Client.from_file(path)
+    with pytest.warns(FallbackToPystac):
+        [*catalog.get_items()]
+
+
+@pytest.mark.vcr
+def test_fallback_strategy() -> None:
+    """Make sure links get recreated correctly using APILayoutStrategy."""
+
+    client = Client.open(
+        "https://planetarycomputer.microsoft.com/api/stac/v1/",
+    )
+    col = client.get_collection("landsat-c2-l2")
+    assert col is not None
+
+    item = next(col.get_items())
+
+    item_href = item.self_href
+    col_href = col.self_href
+    root_href = client.self_href
+
+    col.links = []
+    item.links = []
+
+    client.add_child(col)
+    col.add_item(item)
+
+    assert col.self_href == col_href
+
+    assert (col_parent := col.get_single_link("parent"))
+    assert col_parent.href == root_href
+
+    assert (col_root := col.get_single_link("root"))
+    assert col_root.href == root_href
+
+    assert item.self_href == item_href
+
+    assert (item_col := item.get_single_link("collection"))
+    assert item_col.href == col_href
+
+    assert (item_parent := item.get_single_link("parent"))
+    assert item_parent.href == col_href
+
+    assert (item_root := item.get_single_link("root"))
+    assert item_root.href == root_href
+
+
+def test_get_collection_fallback_strategy_for_static_catalogs() -> None:
+    client = Client.from_file(
+        str(TEST_DATA / "test-case-1" / "country-1" / "catalog.json")
+    )
+
+    with pytest.warns(FallbackToPystac):
+        area_1_1 = client.get_collection("area-1-1")
+        assert area_1_1 is not None
+
+    with pytest.warns(FallbackToPystac):
+        area_1_2 = client.get_collection("area-1-2")
+        assert area_1_2 is not None
+
+    assert area_1_1.id == "area-1-1"
+    assert area_1_2.id == "area-1-2"
+
+
+def test_get_collection_for_static_catalogs_returns_none_if_not_found() -> None:
+    client = Client.from_file(str(TEST_DATA / "test-case-1" / "catalog.json"))
+    with pytest.warns(FallbackToPystac):
+        collection = client.get_collection("country-1")
+        assert collection is None
+
+
+def test_get_collection_raises_if_collection_id_is_empty() -> None:
+    client = Client.from_file(str(TEST_DATA / "test-case-1" / "catalog.json"))
+    with pytest.raises(ValueError, match="A `collection_id` must be provided"):
+        client.get_collection("")
+
+    with pytest.raises(ValueError, match="A `collection_id` must be provided"):
+        client.get_collection(None)
+
+
+@pytest.mark.vcr
+def test_get_collection_returns_none_if_not_found() -> None:
+    client = Client.open(STAC_URLS["EARTH-SEARCH"])
+    collection = client.get_collection("foo")
+    assert collection is None
+
+
+@pytest.mark.vcr
+def test_query_string_in_collections_url() -> None:
+    # https://github.com/stac-utils/pystac-client/issues/745
+    client = Client.open("https://paituli.csc.fi/geoserver/ogc/stac/v1")
+    client.get_collection("sentinel2-l2a")
+
+
+COLLECTION_WRITES: dict[str, Callable[[Client, dict[str, Any]], Any]] = {
+    "create": lambda client, body: client.create_collection(body),
+    "update": lambda client, body: client.update_collection(body),
+    "patch": lambda client, body: client.patch_collection(body["id"], {"x": 1}),
+    "delete": lambda client, body: client.delete_collection(body["id"]),
+}
+
+
+class TestCollectionTransactions:
+    root_url = STAC_URLS["PLANETARY-COMPUTER"]
+    collections_url = f"{root_url}/collections"
+    collection_url = f"{collections_url}/aster-l1t"
+
+    def _open_client(
+        self, requests_mock: Mocker, transaction: bool = True, **client_kwargs: Any
+    ) -> Client:
+        root = read_data_file("planetary-computer-root.json", parse_json=True)
+        if transaction:
+            root["conformsTo"].append(COLLECTION_TRANSACTION_URI)
+        requests_mock.get(self.root_url, status_code=200, json=root)
+        return Client.open(self.root_url, **client_kwargs)
+
+    def _collection_dict(self) -> dict[str, Any]:
+        collection: dict[str, Any] = read_data_file(
+            "planetary-computer-aster-l1t-collection.json", parse_json=True
+        )
+        return collection
+
+    def test_create_collection(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = self._collection_dict()
+        # servers may add fields to the created collection
+        response = {**collection_dict, "title": "From the server"}
+        requests_mock.post(self.collections_url, status_code=201, json=response)
+
+        collection = client.create_collection(
+            pystac.Collection.from_dict(collection_dict)
+        )
+
+        request = requests_mock.request_history[-1]
+        assert request.method == "POST"
+        assert request.url == self.collections_url
+        assert request.json()["id"] == "aster-l1t"
+        assert not any(link["rel"] == "self" for link in request.json()["links"])
+        assert isinstance(collection, CollectionClient)
+        assert collection.title == "From the server"
+        assert collection.get_self_href() == self.collection_url
+        assert collection.get_root() is client
+
+    def test_create_collection_from_dict(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = self._collection_dict()
+        requests_mock.post(
+            self.collections_url,
+            status_code=201,
+            json=lambda request, _: request.json(),
+        )
+
+        collection = client.create_collection(collection_dict)
+
+        assert requests_mock.request_history[-1].json() == collection_dict
+        assert isinstance(collection, CollectionClient)
+        assert collection.id == "aster-l1t"
+
+    @pytest.mark.parametrize(
+        "status_code, response",
+        [
+            (201, ""),
+            (202, '{"id": "op-1", "status": "Pending"}'),
+            (204, ""),
+        ],
+    )
+    def test_create_collection_no_collection_body(
+        self, requests_mock: Mocker, status_code: int, response: str
+    ) -> None:
+        client = self._open_client(requests_mock)
+        requests_mock.post(self.collections_url, status_code=status_code, text=response)
+
+        assert client.create_collection(self._collection_dict()) is None
+
+    @pytest.mark.parametrize("collection_id", [None, ""])
+    def test_create_collection_requires_id(
+        self, requests_mock: Mocker, collection_id: str | None
+    ) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = self._collection_dict()
+        collection_dict["id"] = collection_id
+
+        with pytest.raises(ValueError, match="A collection `id` must be provided"):
+            client.create_collection(collection_dict)
+
+        assert requests_mock.request_history[-1].method == "GET"
+
+    def test_create_collection_uses_stac_api_io(self, requests_mock: Mocker) -> None:
+        """Checks that headers and request modifiers apply to transactions."""
+
+        def add_auth(request: Any) -> None:
+            request.headers["Authorization"] = "Bearer token"
+
+        client = self._open_client(
+            requests_mock, headers={"x-custom": "value"}, request_modifier=add_auth
+        )
+        requests_mock.post(self.collections_url, status_code=201, text="")
+
+        client.create_collection(self._collection_dict())
+
+        request = requests_mock.request_history[-1]
+        assert request.headers["x-custom"] == "value"
+        assert request.headers["Authorization"] == "Bearer token"
+
+    def test_create_collection_applies_modifier(self, requests_mock: Mocker) -> None:
+        def sign(obj: Modifiable) -> None:
+            assert isinstance(obj, pystac.Collection)
+            obj.extra_fields["signed"] = True
+
+        client = self._open_client(requests_mock, modifier=sign)
+        requests_mock.post(
+            self.collections_url, status_code=201, json=self._collection_dict()
+        )
+
+        collection = client.create_collection(self._collection_dict())
+
+        assert collection is not None
+        assert collection.extra_fields["signed"] is True
+        assert collection.modifier is sign
+
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 409, 500])
+    def test_create_collection_error(
+        self, requests_mock: Mocker, status_code: int
+    ) -> None:
+        client = self._open_client(requests_mock)
+        requests_mock.post(self.collections_url, status_code=status_code, text="nope")
+
+        with pytest.raises(APIError, match="nope") as excinfo:
+            client.create_collection(self._collection_dict())
+
+        assert excinfo.value.status_code == status_code
+
+    def test_update_collection(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = self._collection_dict()
+        requests_mock.put(self.collection_url, status_code=200, json=collection_dict)
+
+        collection = client.update_collection(
+            pystac.Collection.from_dict(collection_dict)
+        )
+
+        request = requests_mock.request_history[-1]
+        assert request.method == "PUT"
+        assert request.url == self.collection_url
+        assert request.json()["id"] == "aster-l1t"
+        assert isinstance(collection, CollectionClient)
+
+    def test_update_collection_no_body(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        requests_mock.put(self.collection_url, status_code=204)
+
+        assert client.update_collection(self._collection_dict()) is None
+
+    def test_patch_collection(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        requests_mock.patch(
+            self.collection_url, status_code=200, json=self._collection_dict()
+        )
+
+        collection = client.patch_collection("aster-l1t", {"title": None})
+
+        request = requests_mock.request_history[-1]
+        assert request.method == "PATCH"
+        assert request.url == self.collection_url
+        assert request.json() == {"title": None}
+        assert isinstance(collection, CollectionClient)
+        assert collection.get_self_href() == self.collection_url
+
+    def test_patch_collection_no_body(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        requests_mock.patch(self.collection_url, status_code=202, text="")
+
+        assert client.patch_collection("aster-l1t", {"title": "x"}) is None
+
+    def test_delete_collection(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        requests_mock.delete(self.collection_url, status_code=204)
+
+        client.delete_collection("aster-l1t")
+
+        request = requests_mock.request_history[-1]
+        assert request.method == "DELETE"
+        assert request.url == self.collection_url
+
+    def test_delete_collection_encodes_id(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        url = f"{self.collections_url}/a%2Fb%23c"
+        requests_mock.delete(url, status_code=204)
+
+        client.delete_collection("a/b#c")
+
+        assert requests_mock.request_history[-1].url == url
+
+    def test_get_collection_encodes_id(self, requests_mock: Mocker) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = {**self._collection_dict(), "id": "a/b#c"}
+        url = f"{self.collections_url}/a%2Fb%23c"
+        requests_mock.get(url, status_code=200, json=collection_dict)
+
+        collection = client.get_collection("a/b#c")
+
+        assert requests_mock.request_history[-1].url == url
+        assert collection is not None
+        assert collection.id == "a/b#c"
+
+    @pytest.mark.parametrize("write", COLLECTION_WRITES.values(), ids=COLLECTION_WRITES)
+    def test_write_requires_id(
+        self,
+        requests_mock: Mocker,
+        write: Callable[[Client, dict[str, Any]], Any],
+    ) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = {**self._collection_dict(), "id": ""}
+
+        with pytest.raises(ValueError, match="must be provided"):
+            write(client, collection_dict)
+
+        assert requests_mock.request_history[-1].method == "GET"
+
+    def test_create_collection_does_not_mutate_dict(
+        self, requests_mock: Mocker
+    ) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = self._collection_dict()
+
+        assert client._collection_body(collection_dict) is not collection_dict
+
+    @pytest.mark.parametrize("status_code", [401, 403, 404, 500])
+    def test_delete_collection_error(
+        self, requests_mock: Mocker, status_code: int
+    ) -> None:
+        client = self._open_client(requests_mock)
+        requests_mock.delete(
+            self.collection_url, status_code=status_code, json={"detail": "nope"}
+        )
+
+        with pytest.raises(APIError) as excinfo:
+            client.delete_collection("aster-l1t")
+
+        assert excinfo.value.status_code == status_code
+
+    @pytest.mark.parametrize("write", COLLECTION_WRITES.values(), ids=COLLECTION_WRITES)
+    def test_write_does_not_conform(
+        self,
+        requests_mock: Mocker,
+        write: Callable[[Client, dict[str, Any]], Any],
+    ) -> None:
+        client = self._open_client(requests_mock, transaction=False)
+
+        with pytest.raises(DoesNotConformTo, match="COLLECTION_TRANSACTION"):
+            write(client, self._collection_dict())
+
+        assert requests_mock.request_history[-1].method == "GET"
+
+    def test_item_transaction_is_not_collection_transaction(
+        self, requests_mock: Mocker
+    ) -> None:
+        client = self._open_client(requests_mock, transaction=False)
+        client.add_conforms_to("TRANSACTION")
+
+        with pytest.raises(DoesNotConformTo, match="COLLECTION_TRANSACTION"):
+            client.create_collection(self._collection_dict())
+
+    @pytest.mark.parametrize("status_code", [204, 500])
+    @pytest.mark.parametrize("write", COLLECTION_WRITES.values(), ids=COLLECTION_WRITES)
+    def test_write_clears_get_collection_cache(
+        self,
+        requests_mock: Mocker,
+        write: Callable[[Client, dict[str, Any]], Any],
+        status_code: int,
+    ) -> None:
+        client = self._open_client(requests_mock)
+        collection_dict = self._collection_dict()
+        get_mock = requests_mock.get(
+            self.collection_url, status_code=200, json=collection_dict
+        )
+        requests_mock.post(self.collections_url, status_code=status_code, text="")
+        for method in ("PUT", "PATCH", "DELETE"):
+            requests_mock.register_uri(
+                method, self.collection_url, status_code=status_code
+            )
+
+        client.get_collection("aster-l1t")
+        client.get_collection("aster-l1t")
+        assert get_mock.call_count == 1
+
+        error = (
+            pytest.raises(APIError) if status_code >= 400 else contextlib.nullcontext()
+        )
+        with error:
+            write(client, collection_dict)
+        client.get_collection("aster-l1t")
+
+        assert get_mock.call_count == 2
