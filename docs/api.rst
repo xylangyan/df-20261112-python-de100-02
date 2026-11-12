@@ -217,3 +217,45 @@ MetadataFormat Object
     .. attribute:: schema
 
         The URL to the schema file of this format.
+
+
+Two-Phase Harvesting
+====================
+
+The :mod:`sickle.harvest` module chains ``ListIdentifiers`` and ``GetRecord``
+into a single pipeline and reports data changes between the two requests as
+first-class results.
+
+.. autofunction:: sickle.harvest.harvest
+
+.. autoclass:: sickle.harvest.Harvester
+    :members:
+
+.. autoclass:: sickle.harvest.HarvestResult
+    :members:
+
+    .. attribute:: listed_header
+
+        The :class:`sickle.models.Header` as returned by ``ListIdentifiers``.
+
+    .. attribute:: actual_header
+
+        The :class:`sickle.models.Header` as returned by ``GetRecord``.
+
+    .. attribute:: status
+
+        One of ``unchanged``, ``updated``, ``deleted`` or ``failed``.
+
+    .. attribute:: action
+
+        The applied decision: ``accept``, ``conflict`` or ``skip``.
+
+    .. attribute:: record
+
+        The fetched :class:`sickle.models.Record` (if any).
+
+    .. attribute:: error
+
+        The exception raised while fetching the record (if any).
+
+.. autoexception:: sickle.harvest.HeaderMismatchError

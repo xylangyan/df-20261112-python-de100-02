@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2013-02-27T10:07:54Z</responseDate>
+    <request identifier="oai:test.example.com:deleted" metadataPrefix="oai_dc" verb="GetRecord">
+        http://test.example.com/oai
+    </request>
+    <GetRecord>
+        <record>
+            <header status="deleted">
+                <identifier>oai:test.example.com:deleted</identifier>
+                <datestamp>2011-08-20T09:00:00Z</datestamp>
+            </header>
+        </record>
+    </GetRecord>
+</OAI-PMH>

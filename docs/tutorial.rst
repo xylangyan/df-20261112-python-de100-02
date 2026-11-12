@@ -94,6 +94,41 @@ OAI-PMH allows you to get a single record by using the ``GetRecord`` verb::
     <Record oai:eprints.rclis.org:4088>
 
 
+Two-Phase Harvesting (ListIdentifiers + GetRecord)
+==================================================
+
+If you want to select the items to harvest from ``ListIdentifiers`` first and
+fetch their metadata with ``GetRecord`` afterwards, the
+:func:`sickle.harvest.harvest` function chains both requests into one
+pipeline::
+
+    >>> from sickle.harvest import harvest
+    >>> results = harvest(sickle, metadataPrefix='oai_dc')
+
+Each result keeps the header as listed next to the header actually returned by
+``GetRecord`` (``listed_header`` and ``actual_header``) so that data changes
+happening between the two requests are visible instead of silently merged:
+
+* ``unchanged``: both headers agree;
+* ``updated``: the record's datestamp changed, so the newer metadata must not
+  be stored under the listed (older) datestamp;
+* ``deleted``: the record was deleted between the two requests;
+* ``failed``: the record could not be retrieved; previous results are kept and
+  the exception is attached to the result.
+
+What happens with ``updated`` and ``deleted`` items is decided by the caller
+and recorded as an ``action`` on every result. By default newer versions are
+accepted and deleted items are skipped::
+
+    >>> results = harvest(sickle, on_updated='conflict',
+    ...                   on_deleted='accept', metadataPrefix='oai_dc')
+
+With ``on_updated='conflict'`` the newer record is stashed on the result for
+later reconciliation instead of being accepted; ``on_deleted='accept'`` keeps
+the deletion marker. A single failed ``GetRecord`` never aborts the iteration,
+so the already harvested results remain available.
+
+
 Harvesting OAI Items vs. OAI Responses
 ======================================
 

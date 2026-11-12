@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- two-phase harvesting: :func:`sickle.harvest.harvest` chains ``ListIdentifiers``
+  and ``GetRecord`` and reconciles the listed headers with the fetched record
+  headers
+- changes between the two requests are reported as distinct statuses
+  (``unchanged``, ``updated``, ``deleted``, ``failed``) and the applied
+  ``accept``/``conflict``/``skip`` action is recorded on each result
+- per-item failures no longer abort the surrounding harvest
+
 Version 0.7.0
 -------------
 

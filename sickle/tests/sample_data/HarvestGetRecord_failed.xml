@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
+         http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2013-02-27T10:07:54Z</responseDate>
+    <request identifier="oai:test.example.com:failed" metadataPrefix="oai_dc"
+             verb="GetRecord">http://test.example.com/oai</request>
+    <error code="idDoesNotExist">oai:test.example.com:failed is unknown to this repository.</error>
+</OAI-PMH>
