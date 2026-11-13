@@ -12,6 +12,19 @@ WFS_NAMESPACE = n.get_namespace("wfs")
 WFS20_NAMESPACE = n.get_namespace("wfs20")
 
 
+def _envelope_corners(bbox):
+    """Return (lowerCorner, upperCorner) text, keeping a third dimension."""
+    if len(bbox) in (6, 7):
+        return (
+            '{} {} {}'.format(bbox[0], bbox[1], bbox[2]),
+            '{} {} {}'.format(bbox[3], bbox[4], bbox[5]),
+        )
+    return (
+        '{} {}'.format(bbox[0], bbox[1]),
+        '{} {}'.format(bbox[2], bbox[3]),
+    )
+
+
 class PostRequest():
     """Superclass for POST request building"""
 
@@ -66,13 +79,14 @@ class PostRequest_1_1_0(PostRequest):
         filter_tree = etree.SubElement(self._query, util.nspath('Filter', OGC_NAMESPACE))
         bbox_tree = etree.SubElement(filter_tree, util.nspath('BBOX', OGC_NAMESPACE))
         coords = etree.SubElement(bbox_tree, util.nspath('Envelope', GML_NAMESPACE))
-        if len(bbox) > 4:
-            coords.set('srsName', bbox[4])
+        lower_text, upper_text = _envelope_corners(bbox)
+        if len(bbox) in (5, 7):
+            coords.set('srsName', bbox[-1])
         lower = etree.SubElement(coords, util.nspath('lowerCorner', GML_NAMESPACE))
-        lower.text = '{} {}'.format(bbox[0], bbox[1])
+        lower.text = lower_text
 
         upper = etree.SubElement(coords, util.nspath('upperCorner', GML_NAMESPACE))
-        upper.text = '{} {}'.format(bbox[2], bbox[3])
+        upper.text = upper_text
 
     def set_featureid(self, featureid):
         """Set filter by feature id.
@@ -145,14 +159,15 @@ class PostRequest_2_0_0(PostRequest):
         filter_tree = etree.SubElement(self._query, util.nspath('Filter', FES_NAMESPACE))
         bbox_tree = etree.SubElement(filter_tree, util.nspath('BBOX', FES_NAMESPACE))
         coords = etree.SubElement(bbox_tree, util.nspath('Envelope', GML32_NAMESPACE))
-        if len(bbox) > 4:
-            coords.set('srsName', bbox[4])
+        lower_text, upper_text = _envelope_corners(bbox)
+        if len(bbox) in (5, 7):
+            coords.set('srsName', bbox[-1])
 
         lower = etree.SubElement(coords, util.nspath('lowerCorner', GML32_NAMESPACE))
-        lower.text = '{} {}'.format(bbox[0], bbox[1])
+        lower.text = lower_text
 
         upper = etree.SubElement(coords, util.nspath('upperCorner', GML32_NAMESPACE))
-        upper.text = '{} {}'.format(bbox[2], bbox[3])
+        upper.text = upper_text
 
     def set_featureid(self, featureid):
         """Set filter by feature id.

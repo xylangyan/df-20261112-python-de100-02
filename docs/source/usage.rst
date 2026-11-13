@@ -161,6 +161,30 @@ Usage with WFS 2.0 (FE.2.0):
     >>> filterxml = etree.tostring(filter.toXML()).decode("utf-8")
     >>> response = wfs11.getfeature(typename='bvv:gmd_ex', filter=filterxml)
 
+Explicit spatial extents with a declared axis order.
+
+The legacy ``bbox`` parameter assumes east,north input.  ``SpatialExtent``
+lets the caller declare the axis order of their coordinates; OWSLib then
+orders them for the service version and CRS conventions (EPSG:4326 and its
+URN/URI spellings are latitude,longitude; OGC CRS84 / CRS:84 stay
+longitude,latitude).  KVP ``bbox`` and XML ``Filter`` requests encode the
+same extent identically, a third dimension is preserved, and extents
+crossing the antimeridian are split into two requests whose responses are
+merged with feature-id deduplication.  The returned
+``SpatialFeatureResponse`` records the CRS and extents actually sent.
+
+.. code-block:: python
+
+    >>> from owslib.crs import Crs
+    >>> from owslib.feature.spatial import SpatialExtent
+    >>> extent = SpatialExtent.from_bbox(
+    ...     [49, 15, 51, 16], axis_order='latlon', crs=Crs('EPSG:4326'))
+    >>> response = wfs20.getfeature(typename='bvv:gmd_ex', spatial_extent=extent)
+    >>> response.crs
+    'http://www.opengis.net/def/crs/EPSG/0/4326'
+    >>> response.request_bboxes
+    [(49.0, 15.0, 51.0, 16.0)]
+
 Save response to a file.
 
 .. code-block:: python

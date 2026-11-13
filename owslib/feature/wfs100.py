@@ -26,6 +26,7 @@ from owslib.iso import MD_Metadata
 from owslib.iso3 import MD_Metadata as MD_Metadata3  # ISO 19115 Part 3 XML
 from owslib.crs import Crs
 from owslib.namespaces import Namespaces
+from owslib.feature import WebFeatureService_
 from owslib.feature.schema import get_schema
 from owslib.feature.common import (
     CapabilitiesError,
@@ -69,7 +70,7 @@ def nspath(path, ns=WFS_NAMESPACE):
     return "/".join(components)
 
 
-class WebFeatureService_1_0_0(object):
+class WebFeatureService_1_0_0(WebFeatureService_):
     """Abstraction for OGC Web Feature Service (WFS).
 
     Implements IWebFeatureService.
@@ -182,6 +183,8 @@ class WebFeatureService_1_0_0(object):
         outputFormat=None,
         method="{http://www.opengis.net/wfs}Get",
         startindex=None,
+        spatial_extent=None,
+        bbox_axis_order=None,
     ):
         """Request and return feature data as a file-like object.
 
@@ -216,7 +219,21 @@ class WebFeatureService_1_0_0(object):
         1) typename and bbox (simple spatial query)
         2) typename and filter (more expressive)
         3) featureid (direct access to known features)
+
+        spatial_extent (or bbox with bbox_axis_order) routes through the
+        explicit spatial adaption layer; WFS 1.0.0 supports GET only here.
         """
+        if spatial_extent is not None or bbox_axis_order is not None:
+            if filter is not None or featureid:
+                raise ValueError(
+                    "spatial_extent/bbox cannot be combined with filter "
+                    "or featureid")
+            return self._run_spatial_getfeature(
+                typename, spatial_extent=spatial_extent, bbox=bbox,
+                bbox_axis_order=bbox_axis_order, method=method,
+                featureversion=featureversion, propertyname=propertyname,
+                maxfeatures=maxfeatures, srsname=srsname,
+                outputFormat=outputFormat, startindex=startindex)
         try:
             base_url = next(
                 (

@@ -198,6 +198,8 @@ class WebFeatureService_2_0_0(WebFeatureService_):
         outputFormat=None,
         startindex=None,
         sortby=None,
+        spatial_extent=None,
+        bbox_axis_order=None,
     ):
         """Request and return feature data as a file-like object.
 
@@ -238,6 +240,12 @@ class WebFeatureService_2_0_0(WebFeatureService_):
             List of property names whose values should be used to order
             (upon presentation) the set of feature instances that
             satify the query.
+        spatial_extent : SpatialExtent (optional)
+            Caller-declared extent; antimeridian-crossing extents issue one
+            request per part and responses are merged with feature-id
+            deduplication.  Cannot be combined with bbox.
+        bbox_axis_order : string (optional)
+            Axis order of the bbox coordinates ('xy'/'lonlat' or 'yx'/'latlon')
 
         There are 5 different modes of use
 
@@ -257,6 +265,20 @@ class WebFeatureService_2_0_0(WebFeatureService_):
         url = data = None
         if typename and type(typename) == type(""):  # noqa: E721
             typename = [typename]
+        if spatial_extent is not None or bbox_axis_order is not None:
+            if filter is not None or featureid:
+                raise ValueError(
+                    "spatial_extent/bbox cannot be combined with filter "
+                    "or featureid")
+            return self._run_spatial_getfeature(
+                typename, spatial_extent=spatial_extent, bbox=bbox,
+                bbox_axis_order=bbox_axis_order, method=method,
+                featureversion=featureversion, propertyname=propertyname,
+                maxfeatures=maxfeatures, srsname=srsname,
+                storedQueryID=storedQueryID,
+                storedQueryParams=storedQueryParams,
+                outputFormat=outputFormat, startindex=startindex,
+                sortby=sortby)
         if method.upper() == "GET":
             (url) = self.getGETGetFeatureRequest(
                 typename,
