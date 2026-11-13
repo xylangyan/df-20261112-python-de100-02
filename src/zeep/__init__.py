@@ -3,6 +3,7 @@ from importlib.metadata import PackageNotFoundError, version
 from zeep.client import AsyncClient, CachingClient, Client
 from zeep.plugins import Plugin
 from zeep.settings import Settings
+from zeep.snapshot import Snapshot, client_from_snapshot, snapshot_client
 from zeep.transports import Transport
 from zeep.xsd.valueobjects import AnyObject
 
@@ -16,6 +17,9 @@ __all__ = [
     "Client",
     "Plugin",
     "Settings",
+    "Snapshot",
     "Transport",
     "AnyObject",
+    "client_from_snapshot",
+    "snapshot_client",
 ]

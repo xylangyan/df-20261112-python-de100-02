@@ -1,3 +1,17 @@
+unreleased
+----------
+ - Add schema snapshots. ``zeep.snapshot.snapshot_client`` records the
+   complete transitive set of WSDL/XSD documents loaded while building a
+   client (including relative imports, redirects, circular imports and
+   multiple schemas in the same namespace), with the actual source URL, a
+   content digest and the dependency relationships per document.
+   ``zeep.snapshot.client_from_snapshot`` rebuilds an identical client from
+   the local snapshot without any network access; missing documents (the
+   error names the document which referenced them) or content that no longer
+   matches the recorded digest fail instead of falling back to the network.
+   Different snapshots are fully isolated even when they contain different
+   content for the same URL.
+
 4.3.3 (2026-06-18)
 ------------------
  - Wire up the ``forbid_external`` setting (previously defined but unused

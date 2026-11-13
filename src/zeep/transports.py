@@ -119,6 +119,17 @@ class Transport:
 
     def load(self, url):
         """Load the content from the given URL"""
+        return self.load_with_origin(url)[0]
+
+    def load_with_origin(self, url):
+        """Load the content from the given URL and return a
+        (content, resolved_url) tuple.
+
+        The resolved url is the actual source of the content, i.e. the final
+        URL after any redirects. For non-HTTP locations it equals the
+        requested url.
+
+        """
         if not url:
             raise ValueError("No url given to load")
 
@@ -127,24 +138,27 @@ class Transport:
             if self.cache:
                 response = self.cache.get(url)
                 if response:
-                    return bytes(response)
+                    return bytes(response), url
 
-            content = self._load_remote_data(url)
+            content, resolved_url = self._load_remote_data_with_origin(url)
 
             if self.cache:
                 self.cache.add(url, content)
 
-            return content
+            return content, resolved_url
         else:
             with open(os.path.expanduser(url), "rb") as fh:
-                return fh.read()
+                return fh.read(), url
 
     def _load_remote_data(self, url):
+        return self._load_remote_data_with_origin(url)[0]
+
+    def _load_remote_data_with_origin(self, url):
         self.logger.debug("Loading remote data from: %s", url)
         response = self.session.get(url, timeout=self.load_timeout)
         with closing(response):
             response.raise_for_status()
-            return response.content
+            return response.content, response.url
 
     @contextmanager
     def settings(self, timeout=None):
@@ -219,7 +233,15 @@ class AsyncTransport(Transport):
     async def aclose(self):
         await self.client.aclose()
 
+    def load_with_origin(self, url):
+        if not url:
+            raise ValueError("No url given to load")
+        return self._load_remote_data_with_origin(url)
+
     def _load_remote_data(self, url):
+        return self._load_remote_data_with_origin(url)[0]
+
+    def _load_remote_data_with_origin(self, url):
         response = self.wsdl_client.get(url)
         result = response.read()
 
@@ -227,7 +249,7 @@ class AsyncTransport(Transport):
             response.raise_for_status()
         except httpx.HTTPStatusError:
             raise TransportError(status_code=response.status_code)
-        return result
+        return result, str(response.url)
 
     async def post(self, address, message, headers):
         self.logger.debug("HTTP Post to %s:\n%s", address, message)

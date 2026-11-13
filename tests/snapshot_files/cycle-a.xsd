@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="http://example.com/snapshot/cycle-a"
+        xmlns:b="http://example.com/snapshot/cycle-b"
+        targetNamespace="http://example.com/snapshot/cycle-a"
+        elementFormDefault="qualified">
+  <import namespace="http://example.com/snapshot/cycle-b" schemaLocation="cycle-b.xsd"/>
+  <complexType name="CycleA">
+    <sequence>
+      <element name="b" type="b:CycleB" minOccurs="0"/>
+    </sequence>
+  </complexType>
+</schema>

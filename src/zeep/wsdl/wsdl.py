@@ -73,6 +73,10 @@ class Document:
 
         self.transport = transport
 
+        root_recorder = getattr(transport, "record_root", None)
+        if root_recorder is not None:
+            root_recorder(self.location)
+
         # Dict with all definition objects within this WSDL
         self._definitions = {}  # type: typing.Dict[typing.Tuple[str, str], "Definition"]
         self.types = Schema(
@@ -286,6 +290,9 @@ class Definition:
             if key in self.wsdl._definitions:
                 self.imports[key] = self.wsdl._definitions[key]
             else:
+                recorder = getattr(self.wsdl.transport, "record_dependency", None)
+                if recorder is not None:
+                    recorder(location, self.location, "wsdl:import")
                 document = self.wsdl._get_xml_document(location)
                 if etree.QName(document.tag).localname == "schema":
                     self.types.add_documents([document], location)

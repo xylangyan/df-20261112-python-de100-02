@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="http://example.com/snapshot/common"
+        xmlns:types="http://example.com/snapshot/types"
+        xmlns:red="http://example.com/snapshot/redirected"
+        xmlns:cycle="http://example.com/snapshot/cycle-a"
+        targetNamespace="http://example.com/snapshot/common"
+        elementFormDefault="qualified">
+  <import namespace="http://example.com/snapshot/types" schemaLocation="address-inc.xsd"/>
+  <import namespace="http://example.com/snapshot/types" schemaLocation="types-extra.xsd"/>
+  <import namespace="http://example.com/snapshot/redirected" schemaLocation="../redirect/redirected.xsd"/>
+  <import namespace="http://example.com/snapshot/cycle-a" schemaLocation="cycle-a.xsd"/>
+  <complexType name="CommonType">
+    <sequence>
+      <element name="code" type="string"/>
+      <element name="address" type="types:Address" minOccurs="0"/>
+      <element name="extra" type="types:ExtraType" minOccurs="0"/>
+      <element name="red" type="red:RedirectedType" minOccurs="0"/>
+      <element name="cycle" type="cycle:CycleA" minOccurs="0"/>
+    </sequence>
+  </complexType>
+</schema>

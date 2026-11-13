@@ -1,3 +1,4 @@
+import contextvars
 import os.path
 import typing
 from urllib.parse import urljoin, urlparse, urlunparse
@@ -13,6 +14,27 @@ from zeep.exceptions import (
 )
 from zeep.settings import Settings
 
+# Tracks the origin (requested URL and post-redirect resolved URL) of the
+# document currently being parsed. Set by load_external() and by the lxml
+# ImportResolver so that transports such as zeep.snapshot.SnapshotRecorder can
+# attribute transitive imports to the document which referenced them.
+_document_origin = contextvars.ContextVar("zeep_document_origin", default=None)
+_document_resolved_url = contextvars.ContextVar(
+    "zeep_document_resolved_url", default=None
+)
+
+
+def document_origin():
+    """Return (requested_url, resolved_url) of the document currently being
+    parsed, or (None, None) outside of a load_external() call.
+
+    The resolved url is the actual source of the content (e.g. the final URL
+    after redirects); it falls back to the requested url when the transport
+    does not expose a resolved location.
+
+    """
+    return _document_origin.get(), _document_resolved_url.get()
+
 
 class ImportResolver(Resolver):
     """Custom lxml resolve to use the transport object"""
@@ -25,8 +47,27 @@ class ImportResolver(Resolver):
         if urlparse(url).scheme in ("http", "https"):
             if self.settings.forbid_external:
                 raise ExternalReferenceForbidden(url)
-            content = self.transport.load(url)
-            return self.resolve_string(content, context)
+            content, resolved_url = _load_document(self.transport, url)
+            token_origin = _document_origin.set(url)
+            token_resolved = _document_resolved_url.set(resolved_url)
+            try:
+                return self.resolve_string(content, context)
+            finally:
+                _document_origin.reset(token_origin)
+                _document_resolved_url.reset(token_resolved)
+
+
+def _load_document(transport, url):
+    """Load a document and return (content, resolved_url).
+
+    Uses transport.load_with_origin() when the transport supports it so that
+    the post-redirect URL is known; otherwise falls back to transport.load().
+
+    """
+    load_with_origin = getattr(transport, "load_with_origin", None)
+    if load_with_origin is not None:
+        return load_with_origin(url)
+    return transport.load(url), url
 
 
 def parse_xml(content: str, transport, base_url=None, settings=None):
@@ -97,6 +138,7 @@ def load_external(
 
     """
     settings = settings or Settings()
+    resolved_url = None
     if hasattr(url, "read"):
         content = url.read()
     else:
@@ -105,8 +147,14 @@ def load_external(
         if not _initial and settings.forbid_external:
             if urlparse(str(url)).scheme in ("http", "https"):
                 raise ExternalReferenceForbidden(url)
-        content = transport.load(url)
-    return parse_xml(content, transport, base_url, settings=settings)
+        content, resolved_url = _load_document(transport, url)
+    token_origin = _document_origin.set(url if not hasattr(url, "read") else None)
+    token_resolved = _document_resolved_url.set(resolved_url)
+    try:
+        return parse_xml(content, transport, base_url, settings=settings)
+    finally:
+        _document_origin.reset(token_origin)
+        _document_resolved_url.reset(token_resolved)
 
 
 async def load_external_async(
@@ -130,6 +178,7 @@ async def load_external_async(
 
     """
     settings = settings or Settings()
+    resolved_url = None
     if hasattr(url, "read"):
         content = url.read()
     else:
@@ -138,8 +187,19 @@ async def load_external_async(
         if not _initial and settings.forbid_external:
             if urlparse(str(url)).scheme in ("http", "https"):
                 raise ExternalReferenceForbidden(url)
-        content = await transport.load(url)
-    return parse_xml(content, transport, base_url, settings=settings)
+        load_with_origin = getattr(transport, "load_with_origin", None)
+        if load_with_origin is not None:
+            content, resolved_url = await load_with_origin(url)
+        else:
+            content = await transport.load(url)
+            resolved_url = url
+    token_origin = _document_origin.set(url if not hasattr(url, "read") else None)
+    token_resolved = _document_resolved_url.set(resolved_url)
+    try:
+        return parse_xml(content, transport, base_url, settings=settings)
+    finally:
+        _document_origin.reset(token_origin)
+        _document_resolved_url.reset(token_resolved)
 
 
 def normalize_location(settings, url, base_url):

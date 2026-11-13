@@ -22,6 +22,23 @@ Transport
    :members:
 
 
+Schema snapshots
+----------------
+
+.. autofunction:: zeep.snapshot_client
+
+.. autofunction:: zeep.client_from_snapshot
+
+.. autoclass:: zeep.snapshot.Snapshot
+   :members:
+
+.. autoclass:: zeep.snapshot.SnapshotRecorder
+   :members:
+
+.. autoclass:: zeep.snapshot.SnapshotOfflineTransport
+   :members:
+
+
 AnyObject
 ---------
 

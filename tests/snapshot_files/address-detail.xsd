@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="http://example.com/snapshot/types"
+        targetNamespace="http://example.com/snapshot/types">
+  <complexType name="AddressDetail">
+    <sequence>
+      <element name="city" type="string"/>
+      <element name="country" type="string"/>
+    </sequence>
+  </complexType>
+</schema>

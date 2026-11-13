@@ -234,6 +234,14 @@ class SchemaVisitor:
             )
             return
 
+        recorder = getattr(self.schema._transport, "record_dependency", None)
+        if recorder is not None:
+            recorder(
+                absolute_location(location, self.document._location),
+                self.document._base_url or self.document._location,
+                "xsd:import",
+            )
+
         # Load the XML
         schema_node = self._retrieve_data(location, base_url=self.document._location)
 
@@ -285,6 +293,14 @@ class SchemaVisitor:
         if not node.get("schemaLocation"):
             raise NotImplementedError("schemaLocation is required")
         location = node.get("schemaLocation")
+
+        recorder = getattr(self.schema._transport, "record_dependency", None)
+        if recorder is not None:
+            recorder(
+                absolute_location(location, self.document._base_url),
+                self.document._base_url or self.document._location,
+                "xsd:include",
+            )
 
         if location in self._includes:
             return

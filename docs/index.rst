@@ -152,6 +152,7 @@ User guide
    client
    settings
    transport
+   snapshot
    headers
    datastructures
    attachments

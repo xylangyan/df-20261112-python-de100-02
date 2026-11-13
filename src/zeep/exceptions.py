@@ -123,3 +123,42 @@ class ExternalReferenceForbidden(Error):
 
     def __str__(self):
         return "ExternalReferenceForbidden(url=%r)" % (self.url,)
+
+
+class SnapshotError(Error):
+    """Base class for errors raised while loading a schema snapshot."""
+
+
+class SnapshotDocumentMissing(SnapshotError):
+    """Raised in offline mode when a required document is not in the
+    snapshot. No fallback to the network is attempted."""
+
+    def __init__(self, url, referrer=None):
+        self.url = url
+        self.referrer = referrer
+        if referrer:
+            message = (
+                "Document %r required by %r is not part of the schema "
+                "snapshot; refusing to fetch it from the network in "
+                "offline mode." % (url, referrer)
+            )
+        else:
+            message = (
+                "Document %r is not part of the schema snapshot; refusing "
+                "to fetch it from the network in offline mode." % (url,)
+            )
+        super().__init__(message)
+
+
+class SnapshotChecksumMismatch(SnapshotError):
+    """Raised when the content stored for a URL no longer matches the
+    digest recorded in the snapshot manifest."""
+
+    def __init__(self, url, expected, actual):
+        self.url = url
+        self.expected = expected
+        self.actual = actual
+        super().__init__(
+            "Content of %r does not match the schema snapshot: expected "
+            "digest %r but got %r." % (url, expected, actual)
+        )

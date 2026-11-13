@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<definitions
+    xmlns="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:tns="http://example.com/snapshot/binding"
+    targetNamespace="http://example.com/snapshot/binding"
+    name="SnapshotHelpers">
+  <!-- circular import: this document imports back the entry-point document -->
+  <import namespace="http://example.com/snapshot/service" location="main.wsdl"/>
+  <documentation>Helper document which circularly imports the root WSDL.</documentation>
+</definitions>
