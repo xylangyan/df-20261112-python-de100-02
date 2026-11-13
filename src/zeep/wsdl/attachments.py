@@ -47,6 +47,34 @@ class MessagePack:
             if attachment.content_id == content_id:
                 return attachment
 
+    def resolve_content_id(self, content_id):
+        """Return the attachment for the given MIME Content-ID.
+
+        Unlike :meth:`get_by_content_id` this fails loudly instead of
+        silently returning ``None``, and treats duplicate Content-ID headers
+        as an ambiguous reference.
+
+        :param content_id: The content-id to return
+        :type content_id: str
+        :rtype: Attachment
+        :raises KeyError: when no attachment carries the Content-ID.
+        :raises ValueError: when multiple attachments carry the Content-ID.
+
+        """
+        matches = [
+            attachment
+            for attachment in self.attachments
+            if attachment.content_id == content_id
+        ]
+        if not matches:
+            raise KeyError(content_id)
+        if len(matches) > 1:
+            raise ValueError(
+                "Ambiguous Content-ID %s: %d attachments match"
+                % (content_id, len(matches))
+            )
+        return matches[0]
+
 
 class Attachment:
     def __init__(self, part):

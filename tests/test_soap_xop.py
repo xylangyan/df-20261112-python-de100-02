@@ -1,15 +1,58 @@
 from io import StringIO
 
+import pytest
 import requests_mock
 from lxml import etree
 from pretend import stub
-from requests_toolbelt.multipart.decoder import MultipartDecoder
+from requests_toolbelt.multipart.decoder import BodyPart, MultipartDecoder
 
 from tests.utils import assert_nodes_equal
 from zeep import Client
 from zeep.transports import Transport
 from zeep.wsdl.attachments import MessagePack
 from zeep.wsdl.messages import xop
+
+
+XOP_NS = "http://www.w3.org/2004/08/xop/include"
+
+
+def make_body_part(content_id, content=b"BINARYDATA"):
+    return BodyPart(
+        b"\r\n".join(
+            [
+                b"Content-Type: application/octet-stream",
+                b"Content-Transfer-Encoding: binary",
+                b"Content-ID: " + content_id,
+                b"",
+                content,
+            ]
+        ),
+        "utf-8",
+    )
+
+
+def make_two_reference_document():
+    return etree.fromstring(
+        """
+        <soap:Envelope
+            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+            xmlns:xop="http://www.w3.org/2004/08/xop/include"
+            xmlns:test="http://tests.python-zeep.org/xsd-main">
+            <soap:Body>
+                <test:resultSimple>
+                    <test:BinaryData>
+                        <xop:Include href="cid:first"/>
+                        <xop:Include href="cid:second"/>
+                    </test:BinaryData>
+                </test:resultSimple>
+            </soap:Body>
+        </soap:Envelope>
+        """
+    )
+
+
+def include_nodes(document):
+    return document.xpath("//xop:Include", namespaces={"xop": XOP_NS})
 
 
 def test_rebuild_xml():
@@ -303,3 +346,143 @@ def test_xop_cid_encoded():
         )
         result = service.TestOperation2("")
         assert result["_value_1"] == b"BINARYDATA"
+
+
+def test_xop_retry_after_missing_attachment():
+    """First reference resolves, second is missing: the failure must not
+    leave a half-expanded tree behind, and retrying on the same document
+    with the completed message pack must give the full result."""
+    service = get_client_service()
+    operation = service._binding.get("TestOperation1")
+
+    document = make_two_reference_document()
+    snapshot = etree.tostring(document)
+    message_pack = MessagePack(parts=[make_body_part(b"<first>", b"FIRST")])
+
+    with pytest.raises(xop.XopError, match="No part found for: 'cid:second'"):
+        xop.process_xop(document, message_pack)
+
+    # The failed attempt left no half-expanded state behind.
+    assert etree.tostring(document) == snapshot
+    assert len(include_nodes(document)) == 2
+    assert len(message_pack.attachments) == 1
+    assert message_pack.attachments[0].content_id == "<first>"
+    assert message_pack.attachments[0].content == b"FIRST"
+    # The original MessagePack interface is untouched.
+    assert message_pack.get_by_content_id("<first>").content == b"FIRST"
+    assert message_pack.get_by_content_id("<second>") is None
+
+    # Retry on the same document once the missing attachment is available.
+    completed_pack = MessagePack(
+        parts=[
+            make_body_part(b"<first>", b"FIRST"),
+            make_body_part(b"<second>", b"SECOND"),
+        ]
+    )
+    assert xop.process_xop(document, completed_pack)
+
+    expected = """
+        <soap:Envelope
+            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+            xmlns:xop="http://www.w3.org/2004/08/xop/include"
+            xmlns:test="http://tests.python-zeep.org/xsd-main">
+            <soap:Body>
+                <test:resultSimple>
+                    <test:BinaryData>U0VDT05E</test:BinaryData>
+                </test:resultSimple>
+            </soap:Body>
+        </soap:Envelope>
+    """
+    assert_nodes_equal(etree.tostring(document), expected)
+    assert len(include_nodes(document)) == 0
+    assert len(completed_pack.attachments) == 2
+    assert operation.process_reply(document) == b"SECOND"
+
+
+def test_xop_missing_reference_keeps_message_untouched():
+    document = make_two_reference_document()
+    snapshot = etree.tostring(document)
+    message_pack = MessagePack(parts=[make_body_part(b"<first>", b"FIRST")])
+
+    with pytest.raises(xop.XopError, match="No part found for: 'cid:second'"):
+        xop.process_xop(document, message_pack)
+
+    assert etree.tostring(document) == snapshot
+    assert len(include_nodes(document)) == 2
+
+
+def test_xop_ambiguous_content_id_keeps_message_untouched():
+    document = make_two_reference_document()
+    snapshot = etree.tostring(document)
+    message_pack = MessagePack(
+        parts=[
+            make_body_part(b"<first>", b"ONE"),
+            make_body_part(b"<first>", b"TWO"),
+            make_body_part(b"<second>", b"SECOND"),
+        ]
+    )
+
+    with pytest.raises(xop.XopError, match="Ambiguous Content-ID <first>"):
+        xop.process_xop(document, message_pack)
+
+    assert etree.tostring(document) == snapshot
+    assert len(include_nodes(document)) == 2
+    assert len(message_pack.attachments) == 3
+
+
+def test_xop_invalid_href_keeps_message_untouched():
+    message_pack = MessagePack(parts=[make_body_part(b"<first>", b"FIRST")])
+    invalid_hrefs = (
+        "http://example.com/part",
+        "cid:bad%2",
+        "cid:bad%zz",
+    )
+
+    for href in invalid_hrefs:
+        document = make_two_reference_document()
+        include_nodes(document)[0].set("href", href)
+        snapshot = etree.tostring(document)
+
+        with pytest.raises(xop.XopError):
+            xop.process_xop(document, message_pack)
+
+        assert etree.tostring(document) == snapshot
+        assert len(include_nodes(document)) == 2
+
+    document = make_two_reference_document()
+    del include_nodes(document)[0].attrib["href"]
+    snapshot = etree.tostring(document)
+    with pytest.raises(xop.XopError):
+        xop.process_xop(document, message_pack)
+    assert etree.tostring(document) == snapshot
+    assert len(include_nodes(document)) == 2
+
+
+def test_xop_shared_attachment_and_empty_content():
+    """One attachment may be referenced multiple times and an empty part
+    still counts as an existing attachment."""
+    service = get_client_service()
+    operation = service._binding.get("TestOperation1")
+
+    document = etree.fromstring(
+        """
+        <soap:Envelope
+            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+            xmlns:xop="http://www.w3.org/2004/08/xop/include"
+            xmlns:test="http://tests.python-zeep.org/xsd-main">
+            <soap:Body>
+                <test:resultSimple>
+                    <test:BinaryData>
+                        <xop:Include href="cid:shared"/>
+                        <xop:Include href="cid:shared"/>
+                    </test:BinaryData>
+                </test:resultSimple>
+            </soap:Body>
+        </soap:Envelope>
+        """
+    )
+    message_pack = MessagePack(parts=[make_body_part(b"<shared>", b"")])
+
+    assert xop.process_xop(document, message_pack)
+    assert len(include_nodes(document)) == 0
+    assert operation.process_reply(document) == b""
