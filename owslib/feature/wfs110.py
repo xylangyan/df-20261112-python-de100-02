@@ -203,8 +203,9 @@ class WebFeatureService_1_1_0(WebFeatureService_):
         ----------
         typename : list
             List of typenames (string)
-        filter : string
-            XML-encoded OGC filter expression.
+        filter : string or FES expression
+            XML-encoded OGC filter expression, or an FES expression
+            tree validated against the service capabilities first.
         bbox : tuple
             (left, bottom, right, top) in the feature type's coordinates.
         featureid : list
@@ -236,6 +237,7 @@ class WebFeatureService_1_1_0(WebFeatureService_):
         2) typename and filter (more expressive)
         3) featureid (direct access to known features)
         """
+        filter = self._adapt_filter_argument(filter)
         try:
             base_url = next(
                 (

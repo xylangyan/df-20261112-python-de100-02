@@ -9,7 +9,9 @@ import logging
 
 from urllib.parse import urlencode
 from owslib.crs import Crs
+from owslib.filteradapter import build_filter, is_expression_tree
 from owslib.util import Authentication, build_get_url
+from owslib.feature.common import CapabilitiesError
 from owslib.feature.schema import get_schema
 from owslib.feature.postrequest import PostRequest_1_1_0, PostRequest_2_0_0
 
@@ -389,3 +391,55 @@ class WebFeatureService_(object):
         Get layer schema compatible with :class:`fiona` schema object
         """
         return get_schema(self.url, typename, self.version, auth=self.auth)
+
+    def getfilterrequest(self, expression, namespaces=None, version=None):
+        """Check ``expression`` against this service's capabilities, then build the filter.
+
+        The expression tree is made of existing :mod:`owslib.fes` /
+        :mod:`owslib.fes2` objects and is never modified.  Every node is
+        checked against the ``Filter_Capabilities`` advertised by this WFS;
+        unsupported nodes raise :class:`owslib.filteradapter.FilterCapabilityError`
+        before any request is built.  Only semantically equivalent rewrites
+        are performed, and each one is recorded on the result's
+        ``rewrites`` list.
+
+        Parameters
+        ----------
+
+        - expression: an FES expression object, optionally wrapped in
+          ``fes.Filter`` / ``fes2.Filter``.
+        - namespaces: optional ``{prefix: uri}`` bindings for custom prefixes
+          used in property references.
+        - version: filter encoding version to generate.  Defaults to the FES
+          version matching this WFS version (``'1.0.0'``/``'1.1.0'`` for
+          WFS 1.x and ``'2.0.0'`` for WFS 2.x).
+
+        Returns an :class:`owslib.filteradapter.AdaptedFilter` whose
+        ``toXML()`` / ``tostring()`` output can be passed to
+        :meth:`getfeature` or the post request builders.
+        """
+        if version is None:
+            if self.version.startswith("1.0"):
+                version = "1.0.0"
+            elif self.version.startswith("1."):
+                version = "1.1.0"
+            else:
+                version = "2.0.0"
+        capabilities = getattr(self, "filters", None)
+        if capabilities is None:
+            raise CapabilitiesError(
+                "this service did not advertise Filter_Capabilities, "
+                "the filter cannot be validated")
+        service_namespaces = dict(getattr(self._capabilities, "nsmap", {}) or {})
+        service_namespaces.pop(None, None)
+        if namespaces:
+            service_namespaces.update(namespaces)
+        return build_filter(expression, capabilities, version=version,
+                            namespaces=service_namespaces)
+
+    def _adapt_filter_argument(self, filter, namespaces=None):
+        """Adapt a FES expression argument to version-specific filter XML."""
+        if filter is not None and is_expression_tree(filter):
+            return self.getfilterrequest(
+                filter, namespaces=namespaces).tostring()
+        return filter

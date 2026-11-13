@@ -17,6 +17,7 @@ from owslib.iso import MD_Metadata
 from owslib.iso3 import MD_Metadata as MD_Metadata3  # ISO 19115 Part 3 XML
 from owslib.ows import Constraint, ServiceIdentification, ServiceProvider, OperationsMetadata
 from owslib.etree import etree
+from owslib.fes2 import FilterCapabilities
 from owslib.util import nspath, testXMLValue, openURL, Authentication
 from owslib.crs import Crs
 from owslib.feature import WebFeatureService_
@@ -144,6 +145,10 @@ class WebFeatureService_2_0_0(WebFeatureService_):
                 elem, self.owscommon.namespace
             )
 
+        # FilterCapabilities
+        val = self._capabilities.find(nspath("Filter_Capabilities", ns=FES_NAMESPACE))
+        self.filters = FilterCapabilities(val)
+
         # serviceContents metadata: our assumption is that services use a top-level
         # layer as a metadata organizer, nothing more.
 
@@ -207,8 +212,9 @@ class WebFeatureService_2_0_0(WebFeatureService_):
         ----------
         typename : list
             List of typenames (string)
-        filter : string
-            XML-encoded OGC filter expression.
+        filter : string or FES expression
+            XML-encoded OGC filter expression, or an FES expression
+            tree validated against the service capabilities first.
         bbox : tuple
             (left, bottom, right, top) in the feature type's coordinates == (minx, miny, maxx, maxy)
         featureid : list
@@ -253,6 +259,7 @@ class WebFeatureService_2_0_0(WebFeatureService_):
         Returns:
             BytesIO -- Data returned from the service as a file-like object
         """
+        filter = self._adapt_filter_argument(filter)
         storedQueryParams = storedQueryParams or {}
         url = data = None
         if typename and type(typename) == type(""):  # noqa: E721

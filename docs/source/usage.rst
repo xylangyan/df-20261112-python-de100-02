@@ -161,6 +161,28 @@ Usage with WFS 2.0 (FE.2.0):
     >>> filterxml = etree.tostring(filter.toXML()).decode("utf-8")
     >>> response = wfs11.getfeature(typename='bvv:gmd_ex', filter=filterxml)
 
+Capability-aware filters (WFS):
+
+``getfilterrequest`` checks each node of an expression tree against the
+service's ``Filter_Capabilities`` before generating the XML.  Unsupported
+nodes raise :class:`owslib.filteradapter.FilterCapabilityError` with the
+node path and the capability gap, and the input expression is never modified.
+Only semantically equivalent rewrites are applied and each rewrite is listed
+on the returned object.
+
+.. code-block:: python
+
+    >>> from owslib.fes2 import And, PropertyIsEqualTo, PropertyIsLessThan, Not
+    >>> expression = And([
+    ...     PropertyIsEqualTo('bvv:bez_gem', 'Ingolstadt'),
+    ...     Not([PropertyIsLessThan('bvv:bez_nr', 10)]),
+    ... ])
+    >>> adapted = wfs11.getfilterrequest(expression, namespaces={'bvv': 'https://example.org/bvv'})
+    >>> filterxml = adapted.tostring()
+    >>> adapted.rewrites
+    []
+    >>> response = wfs11.getfeature(typename='bvv:gmd_ex', filter=filterxml)
+
 Save response to a file.
 
 .. code-block:: python

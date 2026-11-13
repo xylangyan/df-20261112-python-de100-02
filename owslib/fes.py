@@ -191,6 +191,8 @@ class FilterCapabilities(object):
             self.temporal_operators = []
             self.temporal_operands = []
             self.scalar_comparison_operators = []
+            self.logical_operators = False
+            self.arithmetic_operators = False
             return
 
         self.spatial_operands = [f.text for f in elem.findall(util.nspath_eval(
@@ -209,8 +211,60 @@ class FilterCapabilities(object):
             self.temporal_operators.append(f.attrib['name'])
 
         # Scalar_Capabilities
-        self.scalar_comparison_operators = [f.text for f in elem.findall(util.nspath_eval(
-            'ogc:Scalar_Capabilities/ogc:ComparisonOperators/ogc:ComparisonOperator', namespaces))]
+        self.scalar_comparison_operators = [
+            f.text.strip() for f in elem.findall(util.nspath_eval(
+                'ogc:Scalar_Capabilities/ogc:ComparisonOperators/ogc:ComparisonOperator', namespaces))
+            if f.text is not None]
+        self.logical_operators = elem.find(util.nspath_eval(
+            'ogc:Scalar_Capabilities/ogc:LogicalOperators', namespaces)) is not None
+        self.arithmetic_operators = elem.find(util.nspath_eval(
+            'ogc:Scalar_Capabilities/ogc:ArithmeticOperators', namespaces)) is not None
+
+        # FE 1.0 uses a different (underscored) capabilities structure.
+        if elem.find(util.nspath_eval(
+                'ogc:Spatial_Capabilities/ogc:SpatialOperators', namespaces)) is None:
+            self._parse_fes100_capabilities(elem)
+
+    def _parse_fes100_capabilities(self, elem):
+        self.spatial_operators = []
+        operators = elem.find(util.nspath_eval(
+            'ogc:Spatial_Capabilities/ogc:Spatial_Operators', namespaces))
+        if operators is not None:
+            for operator in operators:
+                local = operator.tag.split('}', 1)[-1]
+                if local == 'Intersect':
+                    local = 'Intersects'
+                self.spatial_operators.append(local)
+
+        self.scalar_comparison_operators = []
+        scalar = elem.find(util.nspath_eval(
+            'ogc:Scalar_Capabilities/ogc:Comparison_Operators', namespaces))
+        if scalar is not None:
+            for comparison in scalar:
+                local = comparison.tag.split('}', 1)[-1]
+                if local == 'Simple_Comparisons':
+                    self.scalar_comparison_operators.extend([
+                        'EqualTo', 'NotEqualTo', 'LessThan', 'GreaterThan',
+                        'LessThanEqualTo', 'GreaterThanEqualTo'])
+                elif local == 'Like':
+                    self.scalar_comparison_operators.append('Like')
+                elif local == 'Between':
+                    self.scalar_comparison_operators.append('Between')
+                elif local in ('NullCheck', 'PropertyIsNull'):
+                    self.scalar_comparison_operators.append('NullCheck')
+
+        self.logical_operators = elem.find(util.nspath_eval(
+            'ogc:Scalar_Capabilities/ogc:Logical_Operators', namespaces)) is not None
+
+    def getfilterrequest(self, expression, namespaces=None, version="1.1.0"):
+        """Check ``expression`` against these capabilities, then build the filter.
+
+        See :func:`owslib.filteradapter.build_filter` for details.  The
+        expression tree is never modified.
+        """
+        from owslib.filteradapter import build_filter
+        return build_filter(expression, self, version=version,
+                            namespaces=namespaces)
 
 
 def setsortby(parent, propertyname, order='ASC'):
@@ -430,3 +484,15 @@ class UnaryLogicOpType(OgcExpression):
 class Not(UnaryLogicOpType):
     def __init__(self, operations):
         super(Not, self).__init__('ogc:Not', operations)
+
+
+class Filter(OgcExpression):
+    """Convenience wrapper for a standalone FE 1.1 filter expression."""
+
+    def __init__(self, filter):
+        self.filter = filter
+
+    def toXML(self):
+        node = etree.Element(util.nspath_eval('ogc:Filter', namespaces))
+        node.append(self.filter.toXML())
+        return node

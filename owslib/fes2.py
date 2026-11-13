@@ -191,6 +191,8 @@ class FilterCapabilities(object):
             self.temporal_operators = []
             self.temporal_operands = []
             self.scalar_comparison_operators = []
+            self.logical_operators = False
+            self.arithmetic_operators = False
             self.conformance = {}
             return
 
@@ -211,13 +213,31 @@ class FilterCapabilities(object):
             self.temporal_operators.append(f.attrib['name'])
 
         # Scalar_Capabilities
-        self.scalar_comparison_operators = [f.text for f in elem.findall(util.nspath_eval(
-            'fes:Scalar_Capabilities/fes:ComparisonOperators/fes:ComparisonOperator', namespaces))]
+        self.scalar_comparison_operators = [
+            (f.text.strip() if f.text is not None and f.text.strip()
+             else f.attrib.get('name'))
+            for f in elem.findall(util.nspath_eval(
+                'fes:Scalar_Capabilities/fes:ComparisonOperators/fes:ComparisonOperator', namespaces))
+            if (f.text and f.text.strip()) or f.attrib.get('name')]
+        self.logical_operators = elem.find(util.nspath_eval(
+            'fes:Scalar_Capabilities/fes:LogicalOperators', namespaces)) is not None
+        self.arithmetic_operators = elem.find(util.nspath_eval(
+            'fes:Scalar_Capabilities/fes:ArithmeticOperators', namespaces)) is not None
 
         # Conformance
         self.conformance = {}
         for f in elem.findall(util.nspath_eval('fes:Conformance/fes:Constraint', namespaces)):
             self.conformance[f.attrib.get('name')] = f.find(util.nspath_eval('ows110:DefaultValue', namespaces)).text
+
+    def getfilterrequest(self, expression, namespaces=None, version="2.0.0"):
+        """Check ``expression`` against these capabilities, then build the filter.
+
+        See :func:`owslib.filteradapter.build_filter` for details.  The
+        expression tree is never modified.
+        """
+        from owslib.filteradapter import build_filter
+        return build_filter(expression, self, version=version,
+                            namespaces=namespaces)
 
 
 def setsortby(parent, propertyname, order='ASC'):

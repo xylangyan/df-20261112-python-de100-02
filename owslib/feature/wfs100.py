@@ -21,11 +21,13 @@ from owslib.util import (
     openURL
 )
 from owslib.etree import etree
+from owslib.fes import FilterCapabilities
 from owslib.fgdc import Metadata
 from owslib.iso import MD_Metadata
 from owslib.iso3 import MD_Metadata as MD_Metadata3  # ISO 19115 Part 3 XML
 from owslib.crs import Crs
 from owslib.namespaces import Namespaces
+from owslib.feature import WebFeatureService_
 from owslib.feature.schema import get_schema
 from owslib.feature.common import (
     CapabilitiesError,
@@ -69,7 +71,7 @@ def nspath(path, ns=WFS_NAMESPACE):
     return "/".join(components)
 
 
-class WebFeatureService_1_0_0(object):
+class WebFeatureService_1_0_0(WebFeatureService_):
     """Abstraction for OGC Web Feature Service (WFS).
 
     Implements IWebFeatureService.
@@ -135,6 +137,11 @@ class WebFeatureService_1_0_0(object):
         for elem in self._capabilities.find(nspath("Capability/Request"))[:]:
             self.operations.append(OperationMetadata(elem))
 
+        # FilterCapabilities
+        val = self._capabilities.find(
+            nspath_eval("ogc:Filter_Capabilities", n.get_namespaces(["ogc"])))
+        self.filters = FilterCapabilities(val)
+
         # serviceContents metadata: our assumption is that services use a top-level
         # layer as a metadata organizer, nothing more.
 
@@ -189,8 +196,9 @@ class WebFeatureService_1_0_0(object):
         ----------
         typename : list
             List of typenames (string)
-        filter : string
-            XML-encoded OGC filter expression.
+        filter : string or FES expression
+            XML-encoded OGC filter expression, or an FES expression
+            tree validated against the service capabilities first.
         bbox : tuple
             (left, bottom, right, top) in the feature type's coordinates.
         featureid : list
@@ -217,6 +225,7 @@ class WebFeatureService_1_0_0(object):
         2) typename and filter (more expressive)
         3) featureid (direct access to known features)
         """
+        filter = self._adapt_filter_argument(filter)
         try:
             base_url = next(
                 (
